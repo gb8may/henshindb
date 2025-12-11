@@ -1,0 +1,9 @@
+[build]
+  publish = "./"
+
+[[plugins]]
+package = "@netlify/plugin-inject-env"
+
+[template.environment]
+  SUPABASE_URL = ""
+  SUPABASE_ANON_KEY = ""

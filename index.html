@@ -2,11 +2,15 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <title>Henshin DB</title>
+    <title>Henshin Database</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
+
   <body class="bg-slate-900 text-slate-100">
+    <!-- 🔌 ENV VARS (Netlify injeta aqui) -->
+    <script src="env.js"></script>
+
     <div class="max-w-md mx-auto h-screen flex flex-col">
       <!-- HEADER -->
       <header class="flex items-center justify-center h-14 bg-slate-950/70 border-b border-slate-800">
@@ -15,16 +19,10 @@
 
       <!-- TABS -->
       <nav class="flex justify-between bg-slate-900 px-3 py-2 gap-2 border-b border-slate-800">
-        <button
-          id="tab-characters"
-          class="flex-1 py-2 rounded-full text-sm font-medium bg-slate-100 text-slate-900"
-        >
+        <button id="tab-characters" class="flex-1 py-2 rounded-full text-sm font-medium bg-slate-100 text-slate-900">
           Personagens
         </button>
-        <button
-          id="tab-glossary"
-          class="flex-1 py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200"
-        >
+        <button id="tab-glossary" class="flex-1 py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200">
           Glossário
         </button>
       </nav>
@@ -33,21 +31,14 @@
       <div class="px-3 py-2 bg-slate-900">
         <div class="flex items-center gap-2 bg-slate-800 rounded-full px-3 py-2">
           <span class="text-slate-400 text-sm">🔍</span>
-          <input
-            id="search-input"
-            type="text"
-            placeholder="Buscar…"
-            class="bg-transparent outline-none border-none w-full text-sm text-slate-100 placeholder:text-slate-500"
-          />
+          <input id="search-input" type="text" placeholder="Buscar…" 
+            class="bg-transparent outline-none w-full text-sm text-slate-100 placeholder:text-slate-500" />
         </div>
       </div>
 
       <!-- LISTA -->
       <main class="flex-1 overflow-y-auto bg-slate-900 px-2 pb-16">
-        <!-- Lista de personagens -->
         <ul id="list-characters" class="space-y-1"></ul>
-
-        <!-- Lista de glossário -->
         <ul id="list-glossary" class="space-y-1 hidden"></ul>
 
         <div id="empty-state" class="hidden text-center text-slate-500 text-sm mt-6">
@@ -55,37 +46,31 @@
         </div>
       </main>
 
-      <!-- PAINEL DE DETALHES (overlay) -->
-      <div
-        id="detail-overlay"
-        class="fixed inset-0 bg-black/60 flex justify-center items-end sm:items-center z-50 hidden"
-      >
+      <!-- DETALHES (overlay) -->
+      <div id="detail-overlay" class="fixed inset-0 bg-black/60 flex justify-center items-end sm:items-center z-50 hidden">
         <div class="bg-slate-900 w-full max-w-md max-h-[90vh] rounded-t-2xl sm:rounded-2xl overflow-y-auto shadow-xl">
-          <!-- header do detalhe -->
           <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
             <button id="detail-close" class="text-sm text-slate-300 hover:text-white">← Voltar</button>
             <h2 id="detail-title" class="text-sm font-medium text-slate-200"></h2>
             <span class="w-10"></span>
           </div>
-
           <div id="detail-body" class="px-4 py-4 text-sm text-slate-100 space-y-4"></div>
         </div>
       </div>
 
       <!-- FOOTER -->
       <footer class="h-10 text-center text-[11px] text-slate-500 flex items-center justify-center">
-        <span>v0.1 · Supabase + HTML</span>
+        <span>v0.1 · Henshin DB</span>
       </footer>
+
     </div>
 
+    <!-- 🔥 APP SCRIPT -->
     <script>
-      // 🔧 CONFIGURAÇÃO SUPABASE
-      const SUPABASE_URL = NETLIFY_ENV_SUPABASE_URL;
-      const SUPABASE_ANON_KEY = NETLIFY_ENV_ANON_KEY;
+      // Agora as variáveis vêm do env.js
+      const SUPABASE_URL = window.SUPABASE_URL;
+      const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
 
-      // ----------------------------------------------------
-      // ESTADO SIMPLES NA MEMÓRIA
-      // ----------------------------------------------------
       let currentTab = "characters";
       let charactersData = [];
       let glossaryData = [];
@@ -102,15 +87,14 @@
       const detailTitle = document.getElementById("detail-title");
       const detailClose = document.getElementById("detail-close");
 
-      // ----------------------------------------------------
-      // FUNÇÕES SUPABASE
-      // ----------------------------------------------------
+      /* -------------------- SUPABASE FETCHERS -------------------- */
+
       async function fetchCharacters(search = "") {
         try {
           let url = `${SUPABASE_URL}/rest/v1/characters?select=*&order=year.asc`;
-          const term = search.trim();
-          if (term) {
-            const encoded = encodeURIComponent("%" + term + "%");
+
+          if (search.trim()) {
+            const encoded = encodeURIComponent("%" + search + "%");
             url += `&or=(name_pt.ilike.${encoded},name_en.ilike.${encoded},franchise.ilike.${encoded})`;
           }
 
@@ -121,16 +105,11 @@
             },
           });
 
-          if (!res.ok) {
-            console.error("Erro ao buscar characters:", await res.text());
-            return [];
-          }
-
           const data = await res.json();
           charactersData = data;
           return data;
-        } catch (err) {
-          console.error("Erro fetchCharacters:", err);
+        } catch (e) {
+          console.error("Erro characters:", e);
           return [];
         }
       }
@@ -138,10 +117,10 @@
       async function fetchGlossary(search = "") {
         try {
           let url = `${SUPABASE_URL}/rest/v1/glossary?select=*&order=jp.asc`;
-          const term = search.trim();
-          if (term) {
-            const raw = `jp.ilike.%${term}%,romaji.ilike.%${term}%,pt.ilike.%${term}%`;
-            url += `&or=${encodeURIComponent(raw)}`;
+
+          if (search.trim()) {
+            const term = encodeURIComponent(search);
+            url += `&or=(jp.ilike.%${term}%,romaji.ilike.%${term}%,pt.ilike.%${term}%)`;
           }
 
           const res = await fetch(url, {
@@ -151,56 +130,60 @@
             },
           });
 
-          if (!res.ok) {
-            console.error("Erro ao buscar glossary:", await res.text());
-            return [];
-          }
-
           const data = await res.json();
           glossaryData = data;
           return data;
-        } catch (err) {
-          console.error("Erro fetchGlossary:", err);
+        } catch (e) {
+          console.error("Erro glossary:", e);
           return [];
         }
       }
 
-      // ----------------------------------------------------
-      // RENDERIZAÇÃO
-      // ----------------------------------------------------
+      /* ---------------------- RENDER LISTS ----------------------- */
+
       function renderCharactersList() {
         listCharactersEl.innerHTML = "";
-        if (!charactersData || charactersData.length === 0) {
-          listCharactersEl.classList.remove("block");
-          listCharactersEl.classList.add("hidden");
+        if (!charactersData.length) {
           emptyStateEl.classList.remove("hidden");
+          listCharactersEl.classList.add("hidden");
           return;
         }
+
         emptyStateEl.classList.add("hidden");
 
         charactersData.forEach((c) => {
-          const li = document.createElement("li");
-          li.className =
-            "px-3 py-3 border-b border-slate-800 hover:bg-slate-800/60 cursor-pointer";
-
           const name = c.name_pt || c.name_en || "Sem nome";
+          const img = c.image_url || "";
           const franchise = c.franchise || "";
           const year = c.year || "";
           const nameJp = c.name_jp || "";
 
+          const li = document.createElement("li");
+          li.className =
+            "px-3 py-3 border-b border-slate-800 hover:bg-slate-800/60 cursor-pointer";
+
           li.innerHTML = `
-            <div class="flex flex-col">
-              <span class="text-sm font-semibold text-slate-50">${name}</span>
-              <span class="text-[11px] text-slate-400 uppercase tracking-wide">${franchise} ${year ? "· " + year : ""}</span>
+            <div class="flex items-center gap-3">
               ${
-                nameJp
-                  ? `<span class="text-xs text-slate-300 mt-1">${nameJp}</span>`
-                  : ""
+                img
+                  ? `<img src="${img}" class="w-12 h-12 rounded-full object-cover border border-slate-700" />`
+                  : `<div class="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs text-slate-400">?</div>`
               }
+              <div class="flex flex-col">
+                <span class="text-sm font-semibold text-slate-50">${name}</span>
+                <span class="text-[11px] text-slate-400 uppercase tracking-wide">${franchise} ${
+            year ? "· " + year : ""
+          }</span>
+                ${
+                  nameJp
+                    ? `<span class="text-xs text-slate-300 mt-1">${nameJp}</span>`
+                    : ""
+                }
+              </div>
             </div>
           `;
 
-          li.addEventListener("click", () => showCharacterDetail(c));
+          li.onclick = () => showCharacterDetail(c);
           listCharactersEl.appendChild(li);
         });
 
@@ -209,12 +192,12 @@
 
       function renderGlossaryList() {
         listGlossaryEl.innerHTML = "";
-        if (!glossaryData || glossaryData.length === 0) {
-          listGlossaryEl.classList.remove("block");
-          listGlossaryEl.classList.add("hidden");
+        if (!glossaryData.length) {
           emptyStateEl.classList.remove("hidden");
+          listGlossaryEl.classList.add("hidden");
           return;
         }
+
         emptyStateEl.classList.add("hidden");
 
         glossaryData.forEach((g) => {
@@ -222,80 +205,80 @@
           li.className =
             "px-3 py-3 border-b border-slate-800 hover:bg-slate-800/60 cursor-pointer";
 
-          const jp = g.jp || "";
-          const romaji = g.romaji || "";
-          const pt = g.pt || g.en || "";
-
           li.innerHTML = `
             <div class="flex flex-col">
-              <span class="text-sm font-semibold text-slate-50">${jp}</span>
+              <span class="text-sm font-semibold text-slate-50">${g.jp}</span>
               ${
-                romaji
-                  ? `<span class="text-[11px] text-slate-300">${romaji}</span>`
+                g.romaji
+                  ? `<span class="text-[11px] text-slate-300">${g.romaji}</span>`
                   : ""
               }
               ${
-                pt
-                  ? `<span class="text-xs text-slate-400 mt-1">${pt}</span>`
+                g.pt
+                  ? `<span class="text-xs text-slate-400 mt-1">${g.pt}</span>`
                   : ""
               }
             </div>
           `;
 
-          li.addEventListener("click", () => showGlossaryDetail(g));
+          li.onclick = () => showGlossaryDetail(g);
           listGlossaryEl.appendChild(li);
         });
 
         listGlossaryEl.classList.remove("hidden");
       }
 
-      // ----------------------------------------------------
-      // DETALHES
-      // ----------------------------------------------------
+      /* ------------------------ DETAILS ------------------------- */
+
       function showCharacterDetail(c) {
-        detailTitle.textContent = c.name_pt || c.name_en || "Detalhes";
-        const franchise = c.franchise || "";
-        const year = c.year || "";
-        const nameJp = c.name_jp || "";
-        const powers = c.powers || "";
-        const equipment = c.equipment || "";
-        const desc = c.description || "";
+        detailTitle.textContent = c.name_pt || c.name_en;
+
+        const img = c.image_url || "";
 
         detailBody.innerHTML = `
-          <div class="space-y-1">
-            ${
-              nameJp
-                ? `<div class="text-sm text-slate-200">${nameJp}</div>`
-                : ""
-            }
-            <div class="text-[11px] text-slate-400 uppercase tracking-wide">
-              ${franchise} ${year ? "· " + year : ""}
-            </div>
+          ${
+            img
+              ? `<div class="w-full overflow-hidden rounded-xl border border-slate-800">
+                   <img src="${img}" class="w-full h-48 object-cover" />
+                 </div>`
+              : ""
+          }
+
+          ${
+            c.name_jp
+              ? `<div class="text-sm text-slate-200 mt-2">${c.name_jp}</div>`
+              : ""
+          }
+
+          <div class="text-[11px] text-slate-400 uppercase tracking-wide">
+            ${c.franchise || ""} ${
+          c.year ? "· " + c.year : ""
+        }
           </div>
 
           ${
-            desc
-              ? `<section class="space-y-1">
+            c.description
+              ? `<section class="mt-4">
                   <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Descrição</h3>
-                  <p class="text-sm text-slate-100 leading-relaxed">${desc}</p>
+                  <p class="text-sm text-slate-100 leading-relaxed mt-1">${c.description}</p>
                 </section>`
               : ""
           }
 
           ${
-            powers
-              ? `<section class="space-y-1">
-                  <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Poderes</h3>
-                  <p class="text-sm text-slate-100 leading-relaxed">${powers}</p>
+            c.powers
+              ? `<section>
+                  <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wide mt-4">Poderes</h3>
+                  <p class="text-sm text-slate-100 leading-relaxed mt-1">${c.powers}</p>
                 </section>`
               : ""
           }
 
           ${
-            equipment
-              ? `<section class="space-y-1">
-                  <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Equipamentos</h3>
-                  <p class="text-sm text-slate-100 leading-relaxed">${equipment}</p>
+            c.equipment
+              ? `<section>
+                  <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wide mt-4">Equipamentos</h3>
+                  <p class="text-sm text-slate-100 leading-relaxed mt-1">${c.equipment}</p>
                 </section>`
               : ""
           }
@@ -305,50 +288,44 @@
       }
 
       function showGlossaryDetail(g) {
-        detailTitle.textContent = g.jp || "Detalhe do termo";
-        const romaji = g.romaji || "";
-        const pt = g.pt || "";
-        const en = g.en || "";
-        const explanation = g.explanation || "";
-        const category = g.category || "";
+        detailTitle.textContent = g.jp;
 
         detailBody.innerHTML = `
-          <div class="space-y-1">
-            ${
-              romaji
-                ? `<div class="text-sm text-slate-200">${romaji}</div>`
-                : ""
-            }
-            ${
-              category
-                ? `<div class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-800 text-[11px] text-slate-200 uppercase tracking-wide">${category}</div>`
-                : ""
-            }
-          </div>
+          ${
+            g.romaji
+              ? `<div class="text-sm text-slate-200">${g.romaji}</div>`
+              : ""
+          }
 
           ${
-            pt
-              ? `<section class="space-y-1">
+            g.category
+              ? `<div class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-800 text-[11px] text-slate-200 uppercase tracking-wide mt-1">${g.category}</div>`
+              : ""
+          }
+
+          ${
+            g.pt
+              ? `<section class="mt-4">
                   <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Português</h3>
-                  <p class="text-sm text-slate-100 leading-relaxed">${pt}</p>
+                  <p class="text-sm text-slate-100 leading-relaxed mt-1">${g.pt}</p>
                 </section>`
               : ""
           }
 
           ${
-            en
-              ? `<section class="space-y-1">
+            g.en
+              ? `<section class="mt-4">
                   <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Inglês</h3>
-                  <p class="text-sm text-slate-100 leading-relaxed">${en}</p>
+                  <p class="text-sm text-slate-100 leading-relaxed mt-1">${g.en}</p>
                 </section>`
               : ""
           }
 
           ${
-            explanation
-              ? `<section class="space-y-1">
+            g.explanation
+              ? `<section class="mt-4">
                   <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Explicação</h3>
-                  <p class="text-sm text-slate-100 leading-relaxed">${explanation}</p>
+                  <p class="text-sm text-slate-100 leading-relaxed mt-1">${g.explanation}</p>
                 </section>`
               : ""
           }
@@ -361,63 +338,49 @@
         detailOverlay.classList.add("hidden");
       }
 
-      // ----------------------------------------------------
-      // TABS + BUSCA
-      // ----------------------------------------------------
+      /* ---------------------- TABS + SEARCH ---------------------- */
+
       async function loadCurrentTab() {
         if (currentTab === "characters") {
-          listGlossaryEl.classList.add("hidden");
-          listCharactersEl.classList.remove("hidden");
           const data = await fetchCharacters(currentSearch);
           charactersData = data;
           renderCharactersList();
         } else {
-          listCharactersEl.classList.add("hidden");
-          listGlossaryEl.classList.remove("hidden");
           const data = await fetchGlossary(currentSearch);
           glossaryData = data;
           renderGlossaryList();
         }
       }
 
-      tabCharactersBtn.addEventListener("click", () => {
+      tabCharactersBtn.onclick = () => {
         currentTab = "characters";
-        tabCharactersBtn.className =
-          "flex-1 py-2 rounded-full text-sm font-medium bg-slate-100 text-slate-900";
-        tabGlossaryBtn.className =
-          "flex-1 py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200";
+        tabCharactersBtn.classList.add("bg-slate-100", "text-slate-900");
+        tabGlossaryBtn.classList.remove("bg-slate-100", "text-slate-900");
+        tabGlossaryBtn.classList.add("bg-slate-800", "text-slate-200");
         loadCurrentTab();
-      });
+      };
 
-      tabGlossaryBtn.addEventListener("click", () => {
+      tabGlossaryBtn.onclick = () => {
         currentTab = "glossary";
-        tabGlossaryBtn.className =
-          "flex-1 py-2 rounded-full text-sm font-medium bg-slate-100 text-slate-900";
-        tabCharactersBtn.className =
-          "flex-1 py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200";
+        tabGlossaryBtn.classList.add("bg-slate-100", "text-slate-900");
+        tabCharactersBtn.classList.remove("bg-slate-100", "text-slate-900");
+        tabCharactersBtn.classList.add("bg-slate-800", "text-slate-200");
         loadCurrentTab();
-      });
+      };
 
-      searchInput.addEventListener("input", () => {
+      searchInput.oninput = () => {
         currentSearch = searchInput.value;
-        // Debounce simples / tosco: só recarrega depois de 300ms sem digitar
         if (searchInput._timer) clearTimeout(searchInput._timer);
-        searchInput._timer = setTimeout(() => {
-          loadCurrentTab();
-        }, 300);
-      });
+        searchInput._timer = setTimeout(() => loadCurrentTab(), 300);
+      };
 
-      detailClose.addEventListener("click", closeDetail);
-      detailOverlay.addEventListener("click", (e) => {
+      detailClose.onclick = closeDetail;
+      detailOverlay.onclick = (e) => {
         if (e.target === detailOverlay) closeDetail();
-      });
+      };
 
-      // ----------------------------------------------------
-      // INICIALIZAÇÃO
-      // ----------------------------------------------------
-      (async function init() {
-        await loadCurrentTab();
-      })();
+      /* ------------------------- INIT ---------------------------- */
+      loadCurrentTab();
     </script>
   </body>
 </html>
