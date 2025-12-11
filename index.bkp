@@ -111,6 +111,7 @@
     const detailClose = document.getElementById("detail-close");
 
     async function fetchCharacters(search = "") {
+      // lista em ordem alfabética por name_pt (fallback name_en)
       let url = `${SUPABASE_URL}/rest/v1/characters?select=*&order=name_pt.asc,name_en.asc`;
       if (search.trim() !== "") {
         const encoded = encodeURIComponent("%" + search + "%");
@@ -355,13 +356,10 @@
         parts.push(`<div class="text-sm text-slate-200 mt-2">${c.name_jp}</div>`);
       }
 
+      // nome civil e ator
       if (c.civil_name || c.actor_name) {
-        const civil = c.civil_name
-          ? `<div class="text-xs text-slate-200">Nome civil: ${c.civil_name}</div>`
-          : "";
-        const actor = c.actor_name
-          ? `<div class="text-xs text-slate-200">Ator: ${c.actor_name}</div>`
-          : "";
+        const civil = c.civil_name ? `<div class="text-xs text-slate-200">Nome civil: ${c.civil_name}</div>` : "";
+        const actor = c.actor_name ? `<div class="text-xs text-slate-200">Ator: ${c.actor_name}</div>` : "";
         parts.push(`
           <div class="mt-2 space-y-0.5">
             ${civil}
@@ -530,11 +528,13 @@
       const search = currentSearch.trim();
 
       if (currentTab === "characters") {
+        // Personagens: sempre lista completa, ou filtrada se tiver busca
         await fetchCharacters(search);
         renderCharactersList();
         return;
       }
 
+      // Demais abas continuam dependentes de busca
       if (search === "") {
         showEmptySearchMessage();
         return;
