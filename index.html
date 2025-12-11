@@ -5,30 +5,38 @@
   <title>Henshin Database</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
 </head>
 
-<body class="bg-slate-900 text-slate-100 overflow-x-hidden">
-  <div class="min-h-screen w-full max-w-md mx-auto flex flex-col">
+<body class="bg-slate-900 text-slate-100">
+  <div class="h-full flex flex-col max-w-md mx-auto bg-slate-900">
 
-    <header class="flex items-center justify-center h-14 bg-slate-950/70 border-b border-slate-800">
+    <header class="h-14 flex items-center justify-center border-b border-slate-800 bg-slate-950/70">
       <h1 class="text-lg font-semibold tracking-wide">Henshin Database</h1>
     </header>
 
-    <nav class="flex flex-wrap gap-2 bg-slate-900 px-3 py-2 border-b border-slate-800">
+    <nav class="grid grid-cols-2 gap-2 border-b border-slate-800 px-3 py-2 bg-slate-900">
       <button id="tab-characters"
-              class="flex-1 basis-[48%] py-2 rounded-full text-sm font-medium bg-slate-100 text-slate-900">
+              class="py-2 rounded-full text-sm font-medium bg-slate-100 text-slate-900">
         Personagens
       </button>
       <button id="tab-glossary"
-              class="flex-1 basis-[48%] py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200">
+              class="py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200">
         Glossário
       </button>
       <button id="tab-collectibles"
-              class="flex-1 basis-[48%] py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200">
+              class="py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200">
         Colecionáveis
       </button>
       <button id="tab-publications"
-              class="flex-1 basis-[48%] py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200">
+              class="py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200">
         Publicações
       </button>
     </nav>
@@ -44,7 +52,7 @@
       </div>
     </div>
 
-    <main class="flex-1 overflow-y-auto bg-slate-900 px-2 pb-16 w-full">
+    <main class="flex-1 overflow-y-auto px-2 pb-16">
       <ul id="list-characters" class="space-y-1 hidden"></ul>
       <ul id="list-glossary" class="space-y-1 hidden"></ul>
       <ul id="list-collectibles" class="space-y-1 hidden"></ul>
@@ -57,9 +65,9 @@
 
     <div
       id="detail-overlay"
-      class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden px-4"
+      class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden p-4"
     >
-      <div class="bg-slate-900 w-full max-w-md max-h-[90vh] rounded-2xl overflow-y-auto shadow-2xl border border-slate-800">
+      <div class="bg-slate-900 w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl border border-slate-800">
         <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
           <button id="detail-close" class="text-sm text-slate-300 hover:text-white">Fechar</button>
           <h2 id="detail-title" class="text-sm font-medium text-slate-200 truncate max-w-[60%] text-center"></h2>
@@ -69,10 +77,9 @@
       </div>
     </div>
 
-    <footer class="h-10 text-center text-[11px] text-slate-500 flex items-center justify-center">
+    <footer class="h-10 flex items-center justify-center text-[11px] text-slate-500">
       v0.1 · Henshin DB · Author: Mayara Gouveia
     </footer>
-
   </div>
 
   <script>
