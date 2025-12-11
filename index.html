@@ -14,45 +14,54 @@
       <h1 class="text-lg font-semibold tracking-wide">Henshin Database</h1>
     </header>
 
-    <nav class="flex justify-between bg-slate-900 px-3 py-2 gap-2 border-b border-slate-800">
+    <nav class="flex flex-wrap gap-2 bg-slate-900 px-3 py-2 border-b border-slate-800">
       <button id="tab-characters"
-              class="flex-1 py-2 rounded-full text-sm font-medium bg-slate-100 text-slate-900">
+              class="flex-1 basis-[48%] py-2 rounded-full text-sm font-medium bg-slate-100 text-slate-900">
         Personagens
       </button>
       <button id="tab-glossary"
-              class="flex-1 py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200">
+              class="flex-1 basis-[48%] py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200">
         Glossário
+      </button>
+      <button id="tab-collectibles"
+              class="flex-1 basis-[48%] py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200">
+        Colecionáveis
+      </button>
+      <button id="tab-publications"
+              class="flex-1 basis-[48%] py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-200">
+        Publicações
       </button>
     </nav>
 
     <div class="px-3 py-2 bg-slate-900">
       <div class="flex items-center gap-2 bg-slate-800 rounded-full px-3 py-2 w-full">
-        <span class="text-slate-400 text-sm">🔍</span>
         <input
           id="search-input"
           type="text"
-          placeholder="Buscar…"
+          placeholder="Buscar por nome, termo ou linha…"
           class="bg-transparent outline-none w-full text-sm text-slate-100 placeholder:text-slate-500"
         />
       </div>
     </div>
 
     <main class="flex-1 overflow-y-auto bg-slate-900 px-2 pb-16 w-full">
-      <ul id="list-characters" class="space-y-1"></ul>
+      <ul id="list-characters" class="space-y-1 hidden"></ul>
       <ul id="list-glossary" class="space-y-1 hidden"></ul>
+      <ul id="list-collectibles" class="space-y-1 hidden"></ul>
+      <ul id="list-publications" class="space-y-1 hidden"></ul>
 
-      <div id="empty-state" class="hidden text-center text-slate-500 text-sm mt-6">
-        Nenhum resultado encontrado.
+      <div id="empty-state" class="text-center text-slate-500 text-sm mt-6">
+        Digite algo na busca para começar.
       </div>
     </main>
 
     <div
       id="detail-overlay"
-      class="fixed inset-0 bg-black/60 flex justify-center items-end sm:items-center z-50 hidden"
+      class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 hidden px-4"
     >
-      <div class="bg-slate-900 w-full max-w-md max-h-[90vh] rounded-t-2xl sm:rounded-2xl overflow-y-auto shadow-xl">
+      <div class="bg-slate-900 w-full max-w-md max-h-[90vh] rounded-2xl overflow-y-auto shadow-2xl border border-slate-800">
         <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
-          <button id="detail-close" class="text-sm text-slate-300 hover:text-white">← Voltar</button>
+          <button id="detail-close" class="text-sm text-slate-300 hover:text-white">Fechar</button>
           <h2 id="detail-title" class="text-sm font-medium text-slate-200 truncate max-w-[60%] text-center"></h2>
           <span class="w-10"></span>
         </div>
@@ -73,14 +82,22 @@
     let currentTab = "characters";
     let charactersData = [];
     let glossaryData = [];
+    let collectiblesData = [];
+    let publicationsData = [];
     let currentSearch = "";
 
     const tabCharactersBtn = document.getElementById("tab-characters");
     const tabGlossaryBtn = document.getElementById("tab-glossary");
+    const tabCollectiblesBtn = document.getElementById("tab-collectibles");
+    const tabPublicationsBtn = document.getElementById("tab-publications");
     const searchInput = document.getElementById("search-input");
+
     const listCharactersEl = document.getElementById("list-characters");
     const listGlossaryEl = document.getElementById("list-glossary");
+    const listCollectiblesEl = document.getElementById("list-collectibles");
+    const listPublicationsEl = document.getElementById("list-publications");
     const emptyStateEl = document.getElementById("empty-state");
+
     const detailOverlay = document.getElementById("detail-overlay");
     const detailBody = document.getElementById("detail-body");
     const detailTitle = document.getElementById("detail-title");
@@ -112,6 +129,32 @@
       return glossaryData;
     }
 
+    async function fetchCollectibles(search = "") {
+      let url = `${SUPABASE_URL}/rest/v1/collectibles?select=*&order=year.asc`;
+      if (search.trim() !== "") {
+        const encoded = encodeURIComponent("%" + search + "%");
+        url += `&or=(name_pt.ilike.${encoded},name_en.ilike.${encoded},line.ilike.${encoded},item_type.ilike.${encoded})`;
+      }
+      const res = await fetch(url, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY }
+      });
+      collectiblesData = await res.json();
+      return collectiblesData;
+    }
+
+    async function fetchPublications(search = "") {
+      let url = `${SUPABASE_URL}/rest/v1/publications?select=*&order=year.asc`;
+      if (search.trim() !== "") {
+        const encoded = encodeURIComponent("%" + search + "%");
+        url += `&or=(title_pt.ilike.${encoded},title_en.ilike.${encoded},publisher.ilike.${encoded})`;
+      }
+      const res = await fetch(url, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY }
+      });
+      publicationsData = await res.json();
+      return publicationsData;
+    }
+
     async function fetchCollectiblesForCharacter(characterId) {
       if (!characterId) return [];
       const url =
@@ -136,14 +179,37 @@
       return await res.json();
     }
 
+    function hideAllLists() {
+      listCharactersEl.classList.add("hidden");
+      listGlossaryEl.classList.add("hidden");
+      listCollectiblesEl.classList.add("hidden");
+      listPublicationsEl.classList.add("hidden");
+    }
+
+    function clearAllLists() {
+      listCharactersEl.innerHTML = "";
+      listGlossaryEl.innerHTML = "";
+      listCollectiblesEl.innerHTML = "";
+      listPublicationsEl.innerHTML = "";
+    }
+
+    function showEmptySearchMessage() {
+      clearAllLists();
+      hideAllLists();
+      emptyStateEl.textContent = "Digite algo na busca para começar.";
+      emptyStateEl.classList.remove("hidden");
+    }
+
     function renderCharactersList() {
       listCharactersEl.innerHTML = "";
       if (!charactersData.length) {
+        hideAllLists();
+        emptyStateEl.textContent = "Nenhum personagem encontrado.";
         emptyStateEl.classList.remove("hidden");
-        listCharactersEl.classList.add("hidden");
         return;
       }
       emptyStateEl.classList.add("hidden");
+      hideAllLists();
 
       charactersData.forEach(c => {
         const name = c.name_pt || c.name_en || "";
@@ -174,11 +240,13 @@
     function renderGlossaryList() {
       listGlossaryEl.innerHTML = "";
       if (!glossaryData.length) {
+        hideAllLists();
+        emptyStateEl.textContent = "Nenhum termo encontrado.";
         emptyStateEl.classList.remove("hidden");
-        listGlossaryEl.classList.add("hidden");
         return;
       }
       emptyStateEl.classList.add("hidden");
+      hideAllLists();
 
       glossaryData.forEach(g => {
         const li = document.createElement("li");
@@ -197,33 +265,91 @@
       listGlossaryEl.classList.remove("hidden");
     }
 
+    function renderCollectiblesList() {
+      listCollectiblesEl.innerHTML = "";
+      if (!collectiblesData.length) {
+        hideAllLists();
+        emptyStateEl.textContent = "Nenhum colecionável encontrado.";
+        emptyStateEl.classList.remove("hidden");
+        return;
+      }
+      emptyStateEl.classList.add("hidden");
+      hideAllLists();
+
+      collectiblesData.forEach(col => {
+        const name = col.name_pt || col.name_en || "";
+        const li = document.createElement("li");
+        li.className =
+          "px-3 py-3 border-b border-slate-800 hover:bg-slate-800/60 cursor-pointer";
+        li.innerHTML = `
+          <div class="flex flex-col min-w-0">
+            <span class="text-sm font-semibold truncate">${name}</span>
+            <span class="text-[11px] text-slate-400 uppercase tracking-wide truncate">
+              ${(col.line || "")}${col.item_type ? " · " + col.item_type : ""}${col.year ? " · " + col.year : ""}
+            </span>
+            ${col.manufacturer ? `<span class="text-[11px] text-slate-500 truncate">${col.manufacturer}</span>` : ""}
+          </div>`;
+        listCollectiblesEl.appendChild(li);
+      });
+
+      listCollectiblesEl.classList.remove("hidden");
+    }
+
+    function renderPublicationsList() {
+      listPublicationsEl.innerHTML = "";
+      if (!publicationsData.length) {
+        hideAllLists();
+        emptyStateEl.textContent = "Nenhuma publicação encontrada.";
+        emptyStateEl.classList.remove("hidden");
+        return;
+      }
+      emptyStateEl.classList.add("hidden");
+      hideAllLists();
+
+      publicationsData.forEach(pub => {
+        const title = pub.title_pt || pub.title_en || "";
+        const li = document.createElement("li");
+        li.className =
+          "px-3 py-3 border-b border-slate-800 hover:bg-slate-800/60 cursor-pointer";
+        li.innerHTML = `
+          <div class="flex flex-col min-w-0">
+            <span class="text-sm font-semibold truncate">${title}</span>
+            <span class="text-[11px] text-slate-400 uppercase tracking-wide truncate">
+              ${(pub.pub_type || "")}${pub.year ? " · " + pub.year : ""}
+            </span>
+            ${pub.publisher ? `<span class="text-[11px] text-slate-500 truncate">${pub.publisher}</span>` : ""}
+          </div>`;
+        listPublicationsEl.appendChild(li);
+      });
+
+      listPublicationsEl.classList.remove("hidden");
+    }
+
     async function showCharacterDetail(c) {
       detailTitle.textContent = c.name_pt || c.name_en || "";
       detailBody.innerHTML = "";
 
-      const baseInfoParts = [];
+      const parts = [];
 
       if (c.image_url) {
-        baseInfoParts.push(`
+        parts.push(`
           <img src="${c.image_url}"
                class="w-full h-48 max-h-56 object-cover rounded-xl border border-slate-800" />
         `);
       }
 
       if (c.name_jp) {
-        baseInfoParts.push(`
-          <div class="text-sm text-slate-200 mt-2">${c.name_jp}</div>
-        `);
+        parts.push(`<div class="text-sm text-slate-200 mt-2">${c.name_jp}</div>`);
       }
 
-      baseInfoParts.push(`
+      parts.push(`
         <div class="text-[11px] text-slate-400 uppercase tracking-wide mt-1">
           ${(c.franchise || "")}${c.year ? " · " + c.year : ""}
         </div>
       `);
 
       if (c.description) {
-        baseInfoParts.push(`
+        parts.push(`
           <section class="mt-4">
             <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Descrição</h3>
             <p class="text-sm mt-1 leading-relaxed">${c.description}</p>
@@ -232,7 +358,7 @@
       }
 
       if (c.powers) {
-        baseInfoParts.push(`
+        parts.push(`
           <section class="mt-4">
             <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Poderes</h3>
             <p class="text-sm mt-1 leading-relaxed">${c.powers}</p>
@@ -241,7 +367,7 @@
       }
 
       if (c.equipment) {
-        baseInfoParts.push(`
+        parts.push(`
           <section class="mt-4">
             <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wide">Equipamentos</h3>
             <p class="text-sm mt-1 leading-relaxed">${c.equipment}</p>
@@ -249,8 +375,7 @@
         `);
       }
 
-      detailBody.innerHTML = baseInfoParts.join("");
-
+      detailBody.innerHTML = parts.join("");
       detailOverlay.classList.remove("hidden");
 
       try {
@@ -374,28 +499,61 @@
     }
 
     async function loadCurrentTab() {
-      if (currentTab === "characters") {
-        await fetchCharacters(currentSearch);
-        renderCharactersList();
-      } else {
-        await fetchGlossary(currentSearch);
-        renderGlossaryList();
+      const search = currentSearch.trim();
+      if (search === "") {
+        showEmptySearchMessage();
+        return;
       }
+
+      if (currentTab === "characters") {
+        await fetchCharacters(search);
+        renderCharactersList();
+      } else if (currentTab === "glossary") {
+        await fetchGlossary(search);
+        renderGlossaryList();
+      } else if (currentTab === "collectibles") {
+        await fetchCollectibles(search);
+        renderCollectiblesList();
+      } else if (currentTab === "publications") {
+        await fetchPublications(search);
+        renderPublicationsList();
+      }
+    }
+
+    function setActiveTab(tab) {
+      const activeClasses = ["bg-slate-100", "text-slate-900"];
+      const inactiveClasses = ["bg-slate-800", "text-slate-200"];
+
+      [tabCharactersBtn, tabGlossaryBtn, tabCollectiblesBtn, tabPublicationsBtn].forEach(btn => {
+        btn.classList.remove(...activeClasses);
+        btn.classList.add(...inactiveClasses);
+      });
+
+      tab.classList.add(...activeClasses);
+      tab.classList.remove(...inactiveClasses);
     }
 
     tabCharactersBtn.onclick = () => {
       currentTab = "characters";
-      tabCharactersBtn.classList.add("bg-slate-100", "text-slate-900");
-      tabGlossaryBtn.classList.remove("bg-slate-100", "text-slate-900");
-      tabGlossaryBtn.classList.add("bg-slate-800", "text-slate-200");
+      setActiveTab(tabCharactersBtn);
       loadCurrentTab();
     };
 
     tabGlossaryBtn.onclick = () => {
       currentTab = "glossary";
-      tabGlossaryBtn.classList.add("bg-slate-100", "text-slate-900");
-      tabCharactersBtn.classList.remove("bg-slate-100", "text-slate-900");
-      tabCharactersBtn.classList.add("bg-slate-800", "text-slate-200");
+      setActiveTab(tabGlossaryBtn);
+      loadCurrentTab();
+    };
+
+    tabCollectiblesBtn.onclick = () => {
+      currentTab = "collectibles";
+      setActiveTab(tabCollectiblesBtn);
+      loadCurrentTab();
+    };
+
+    tabPublicationsBtn.onclick = () => {
+      currentTab = "publications";
+      setActiveTab(tabPublicationsBtn);
       loadCurrentTab();
     };
 
@@ -410,7 +568,8 @@
       if (e.target === detailOverlay) closeDetail();
     };
 
-    loadCurrentTab();
+    setActiveTab(tabCharactersBtn);
+    showEmptySearchMessage();
   </script>
 </body>
 </html>
