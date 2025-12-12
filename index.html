@@ -12,6 +12,7 @@
   --border:rgba(255,255,255,.12);
   --text:#e6eaf0;
   --muted:#9aa4b2;
+  --danger:#ff6b6b;
 }
 
 * { box-sizing:border-box; }
@@ -29,6 +30,21 @@ main {
 }
 
 h1,h2 { margin:0 0 12px 0; }
+
+.notice {
+  display:none;
+  margin:12px 0;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.04);
+  border-radius:12px;
+  font-size:12px;
+  color:var(--muted);
+}
+.notice.danger {
+  border-color:rgba(255,107,107,.35);
+  color:var(--danger);
+}
 
 input {
   width:100%;
@@ -53,6 +69,7 @@ input {
   text-align:left;
   font-size:14px;
   cursor:pointer;
+  user-select:none;
 }
 
 .btn small {
@@ -88,7 +105,7 @@ input {
   background:var(--panel);
   border-radius:16px;
   padding:16px;
-  max-width:90%;
+  max-width:92%;
   max-height:90%;
   overflow:auto;
   box-shadow:0 20px 60px rgba(0,0,0,.6);
@@ -98,6 +115,7 @@ input {
   width:100%;
   border-radius:12px;
   margin-bottom:12px;
+  display:block;
 }
 
 footer {
@@ -112,65 +130,62 @@ footer {
 <body>
 <main>
 
-<!-- HOME -->
+<div id="notice" class="notice"></div>
+
 <section id="view-home">
   <h1>Henshin DB</h1>
-  <p class="muted">Escolha um tema</p>
+  <p style="color:var(--muted); margin-top:0">Escolha um tema</p>
 
   <div class="grid">
-    <button class="btn" onclick="openFranchise('kamen rider')">
+    <button class="btn js-franchise" data-franchise="kamen rider">
       Kamen Rider<br><small>Riders</small>
     </button>
-    <button class="btn" onclick="openFranchise('super sentai')">
+    <button class="btn js-franchise" data-franchise="super sentai">
       Super Sentai<br><small>Equipes</small>
     </button>
-    <button class="btn" onclick="openFranchise('metal hero')">
+    <button class="btn js-franchise" data-franchise="metal hero">
       Metal Hero<br><small>Clássicos</small>
     </button>
   </div>
 </section>
 
-<!-- HUB -->
 <section id="view-hub" class="hidden">
   <h2 id="hub-title"></h2>
 
   <div class="grid">
-    <button class="btn" onclick="openCharacters()">Personagens</button>
-    <button class="btn" onclick="openGlossary()">Glossário</button>
-    <button class="btn" onclick="openPublications()">Publicações</button>
-    <button class="btn" onclick="openCollectibles()">Colecionáveis</button>
+    <button class="btn js-nav" data-target="characters">Personagens</button>
+    <button class="btn js-nav" data-target="glossary">Glossário</button>
+    <button class="btn js-nav" data-target="publications">Publicações</button>
+    <button class="btn js-nav" data-target="collectibles">Colecionáveis</button>
   </div>
 
   <br>
-  <button class="btn" onclick="goHome()">← Voltar</button>
+  <button class="btn js-home">← Voltar</button>
 </section>
 
-<!-- CHARACTERS -->
 <section id="view-characters" class="hidden">
   <h2>Personagens</h2>
-  <input id="search" placeholder="Buscar personagem..." oninput="loadCharacters()">
+  <input id="search" placeholder="Buscar personagem...">
   <ul id="char-list" class="list"></ul>
-  <button class="btn" onclick="backToHub()">← Voltar</button>
+  <button class="btn js-back-hub">← Voltar</button>
 </section>
 
-<!-- GLOSSARY -->
 <section id="view-glossary" class="hidden">
   <h2>Glossário</h2>
   <ul id="glossary-list" class="list"></ul>
-  <button class="btn" onclick="backToHub()">← Voltar</button>
+  <button class="btn js-back-hub">← Voltar</button>
 </section>
 
-<!-- PLACEHOLDERS -->
 <section id="view-publications" class="hidden">
   <h2>Publicações</h2>
-  <p>Em breve</p>
-  <button class="btn" onclick="backToHub()">← Voltar</button>
+  <p style="color:var(--muted)">Em breve</p>
+  <button class="btn js-back-hub">← Voltar</button>
 </section>
 
 <section id="view-collectibles" class="hidden">
   <h2>Colecionáveis</h2>
-  <p>Em breve</p>
-  <button class="btn" onclick="backToHub()">← Voltar</button>
+  <p style="color:var(--muted)">Em breve</p>
+  <button class="btn js-back-hub">← Voltar</button>
 </section>
 
 </main>
@@ -179,9 +194,8 @@ footer {
 v0.1 · Henshin DB · Author: Mayara Gouveia
 </footer>
 
-<!-- MODAL -->
-<div id="modal" class="modal hidden" onclick="closeModal()">
-  <div class="modalCard" onclick="event.stopPropagation()" id="modal-content"></div>
+<div id="modal" class="modal hidden">
+  <div class="modalCard" id="modal-content"></div>
 </div>
 
 <script>
@@ -190,23 +204,33 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 let franchise = "";
 
+function setNotice(msg, type="info") {
+  const el = document.getElementById("notice");
+  if (!msg) { el.style.display="none"; el.className="notice"; el.textContent=""; return; }
+  el.style.display="block";
+  el.textContent = msg;
+  el.className = type === "danger" ? "notice danger" : "notice";
+}
+
 function show(id) {
   document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
 }
 
-function goHome() { show("view-home"); }
-function backToHub() { show("view-hub"); }
+function goHome() { setNotice(""); show("view-home"); }
+function backToHub() { setNotice(""); show("view-hub"); }
 
 function openFranchise(f) {
   franchise = f;
   document.getElementById("hub-title").innerText = f.toUpperCase();
+  setNotice("");
   show("view-hub");
 }
 
 function openCharacters() {
-  document.getElementById("search").value="";
-  document.getElementById("char-list").innerHTML="";
+  setNotice("Digite algo na busca para listar resultados.", "info");
+  document.getElementById("search").value = "";
+  document.getElementById("char-list").innerHTML = "";
   show("view-characters");
 }
 
@@ -218,37 +242,86 @@ function openGlossary() {
 function openPublications(){ show("view-publications"); }
 function openCollectibles(){ show("view-collectibles"); }
 
+function supabaseHeaders() {
+  return {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+  };
+}
+
+async function safeJson(res) {
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return { raw: text }; }
+}
+
 async function loadCharacters() {
-  const q = document.getElementById("search").value;
-  if (!q) return document.getElementById("char-list").innerHTML="";
+  try {
+    const q = document.getElementById("search").value.trim();
+    const ul = document.getElementById("char-list");
+    ul.innerHTML = "";
 
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/characters?franchise=eq.${encodeURIComponent(franchise)}&name_pt=ilike.*${q}*&order=name_pt`, {
-    headers:{
-      apikey:SUPABASE_ANON_KEY,
-      Authorization:`Bearer ${SUPABASE_ANON_KEY}`
+    if (!q) return;
+
+    if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes("COLE_SUA_ANON_KEY")) {
+      setNotice("Cole sua SUPABASE_ANON_KEY no index.html (senão nada vai carregar).", "danger");
+      return;
     }
-  });
-  const data = await res.json();
 
-  const ul = document.getElementById("char-list");
-  ul.innerHTML="";
-  data.forEach(c=>{
-    const li=document.createElement("li");
-    li.innerText=c.name_pt;
-    li.onclick=()=>openCharacter(c);
-    ul.appendChild(li);
-  });
+    const franchiseValue = encodeURIComponent(franchise);
+    const qEscaped = q.replace(/[%]/g, "\\%").replace(/_/g, "\\_");
+    const qEncoded = encodeURIComponent(qEscaped);
+
+    const url =
+      `${SUPABASE_URL}/rest/v1/characters` +
+      `?franchise=eq.${franchiseValue}` +
+      `&or=(name_pt.ilike.*${qEncoded}*,name_en.ilike.*${qEncoded}*)` +
+      `&order=name_pt.asc`;
+
+    const res = await fetch(url, { headers: supabaseHeaders() });
+    if (!res.ok) {
+      const err = await safeJson(res);
+      setNotice(`Erro ao buscar personagens: HTTP ${res.status} ${JSON.stringify(err)}`, "danger");
+      return;
+    }
+
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      setNotice("Nenhum resultado.", "info");
+      return;
+    }
+
+    setNotice("");
+
+    data.forEach(c => {
+      const li = document.createElement("li");
+      li.textContent = c.name_pt || c.name_en || "(sem nome)";
+      li.addEventListener("click", () => openCharacter(c));
+      ul.appendChild(li);
+    });
+  } catch (e) {
+    setNotice(`Erro inesperado ao buscar: ${e?.message || e}`, "danger");
+    console.error(e);
+  }
 }
 
 function openCharacter(c){
-  const m=document.getElementById("modal-content");
-  m.innerHTML=`
-    ${c.image_url?`<img src="${c.image_url}">`:""}
-    <h3>${c.name_pt}</h3>
-    ${c.civil_name?`<p><b>Nome civil:</b> ${c.civil_name}</p>`:""}
-    ${c.actor_name?`<p><b>Ator:</b> ${c.actor_name}</p>`:""}
-    <p>${c.description||""}</p>
+  const m = document.getElementById("modal-content");
+
+  const img = c.image_url ? `<img src="${c.image_url}" alt="">` : "";
+  const title = (c.name_pt || c.name_en || "").trim();
+  const desc = (c.description || "").trim();
+
+  const civil = (c.civil_name || "").trim();
+  const actor = (c.actor_name || "").trim();
+
+  m.innerHTML = `
+    ${img}
+    <h3 style="margin:0 0 8px 0">${title}</h3>
+    ${civil ? `<p style="margin:0 0 6px 0"><b>Nome civil:</b> ${civil}</p>` : ""}
+    ${actor ? `<p style="margin:0 0 6px 0"><b>Ator:</b> ${actor}</p>` : ""}
+    ${desc ? `<p style="margin:10px 0 0 0; color:var(--muted)">${desc}</p>` : ""}
   `;
+
   document.getElementById("modal").classList.remove("hidden");
 }
 
@@ -257,21 +330,72 @@ function closeModal(){
 }
 
 async function loadGlossary(){
-  const res=await fetch(`${SUPABASE_URL}/rest/v1/glossary?order=pt`,{
-    headers:{
-      apikey:SUPABASE_ANON_KEY,
-      Authorization:`Bearer ${SUPABASE_ANON_KEY}`
+  try {
+    if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes("COLE_SUA_ANON_KEY")) {
+      setNotice("Cole sua SUPABASE_ANON_KEY no index.html para carregar o glossário.", "danger");
+      return;
     }
-  });
-  const data=await res.json();
-  const ul=document.getElementById("glossary-list");
-  ul.innerHTML="";
-  data.forEach(t=>{
-    const li=document.createElement("li");
-    li.innerHTML=`<b>${t.pt}</b><br><small>${t.explanation}</small>`;
-    ul.appendChild(li);
-  });
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/glossary?order=pt.asc`, { headers: supabaseHeaders() });
+    if (!res.ok) {
+      const err = await safeJson(res);
+      setNotice(`Erro ao carregar glossário: HTTP ${res.status} ${JSON.stringify(err)}`, "danger");
+      return;
+    }
+
+    const data = await res.json();
+    const ul = document.getElementById("glossary-list");
+    ul.innerHTML = "";
+
+    data.forEach(t=>{
+      const li = document.createElement("li");
+      li.innerHTML = `<b>${t.pt || t.en || t.romaji || ""}</b><br><small style="color:var(--muted)">${t.explanation || ""}</small>`;
+      ul.appendChild(li);
+    });
+
+    setNotice("");
+  } catch (e) {
+    setNotice(`Erro inesperado no glossário: ${e?.message || e}`, "danger");
+    console.error(e);
+  }
 }
+
+/* ==========
+   BINDINGS (sem onclick inline)
+========== */
+document.addEventListener("DOMContentLoaded", () => {
+  // franquias (home)
+  document.querySelectorAll(".js-franchise").forEach(btn => {
+    btn.addEventListener("click", () => openFranchise(btn.dataset.franchise));
+  });
+
+  // navegação do hub
+  document.querySelectorAll(".js-nav").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.target;
+      if (target === "characters") return openCharacters();
+      if (target === "glossary") return openGlossary();
+      if (target === "publications") return openPublications();
+      if (target === "collectibles") return openCollectibles();
+    });
+  });
+
+  // voltar
+  document.querySelectorAll(".js-home").forEach(btn => btn.addEventListener("click", goHome));
+  document.querySelectorAll(".js-back-hub").forEach(btn => btn.addEventListener("click", backToHub));
+
+  // busca
+  document.getElementById("search").addEventListener("input", loadCharacters);
+
+  // modal close
+  const modal = document.getElementById("modal");
+  modal.addEventListener("click", closeModal);
+  document.getElementById("modal-content").addEventListener("click", (e) => e.stopPropagation());
+
+  // start
+  goHome();
+});
 </script>
+
 </body>
 </html>
