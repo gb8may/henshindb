@@ -67,8 +67,14 @@
         padding: 14px 14px 90px;
       }
 
+      /* Views + transição */
       .view { display: none; }
       .view.active { display: block; }
+      @keyframes viewEnter {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .view.animIn { animation: viewEnter 220ms ease-out; }
 
       .sectionTitle { margin: 6px 2px 10px; font-weight: 700; font-size: 16px; line-height: 1.2; }
       .sectionHint { margin: -4px 2px 12px; color: var(--muted); font-size: 13px; line-height: 1.25; }
@@ -149,7 +155,6 @@
       .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
       .meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-
       .nameLine { display: flex; gap: 10px; align-items: baseline; min-width: 0; }
 
       .name {
@@ -162,7 +167,6 @@
       }
 
       .year { font-size: 12px; color: var(--muted); flex: 0 0 auto; }
-
       .desc { margin-top: 8px; color: var(--muted); font-size: 13px; line-height: 1.3; }
 
       .pillRow { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
@@ -340,7 +344,7 @@
 
             <button class="btn" id="btnGoPublications">
               <span>Publicações</span>
-              <small>Filmes, séries, especiais</small>
+              <small>Livros, mooks, guias</small>
             </button>
 
             <button class="btn" id="btnGoCollectibles">
@@ -394,7 +398,7 @@
           <div class="sectionTitle" id="publicationsTitle">Publicações</div>
 
           <div class="searchBox">
-            <input type="search" id="inputPublicationsSearch" placeholder="Buscar por título, tipo, ano..." />
+            <input type="search" id="inputPublicationsSearch" placeholder="Buscar por título, tipo, ano, editora..." />
             <select id="selectPublicationsType">
               <option value="">Todos</option>
             </select>
@@ -413,9 +417,9 @@
           <div class="sectionTitle" id="collectiblesTitle">Colecionáveis</div>
 
           <div class="searchBox">
-            <input type="search" id="inputCollectiblesSearch" placeholder="Buscar por nome, marca, categoria..." />
+            <input type="search" id="inputCollectiblesSearch" placeholder="Buscar por nome, linha, fabricante, tipo..." />
             <select id="selectCollectiblesCategory">
-              <option value="">Todas</option>
+              <option value="">Todos</option>
             </select>
           </div>
 
@@ -465,8 +469,10 @@
       };
 
       function showView(name) {
-        for (const k in views) views[k].classList.remove("active");
-        views[name].classList.add("active");
+        for (const k in views) {
+          views[k].classList.remove("active", "animIn");
+        }
+        views[name].classList.add("active", "animIn");
 
         if (name === "home") headerSubtitle.textContent = "Home";
         if (name === "franchise") headerSubtitle.textContent = formatFranchise(state.franchise);
@@ -532,6 +538,14 @@
       function imageUrlForCharacter(nameEn) {
         const slug = slugifyName(nameEn);
         return `${SUPABASE_URL}/storage/v1/object/public/henshin-images/${slug}.png`;
+      }
+
+      function withCacheBuster(url) {
+        const u = safeText(url);
+        if (!hasValue(u)) return "";
+        // evita ficar preso na imagem antiga quando você sobrescreve no bucket
+        const sep = u.includes("?") ? "&" : "?";
+        return `${u}${sep}v=${Date.now()}`;
       }
 
       async function pingSupabase() {
@@ -617,7 +631,7 @@
           return;
         }
         modalImageWrap.style.display = "block";
-        modalImage.src = u;
+        modalImage.src = withCacheBuster(u);
         modalImage.alt = safeText(alt) || "";
         modalImage.onerror = () => { modalImageWrap.style.display = "none"; };
       }
@@ -843,7 +857,7 @@
       inputGlossarySearch.addEventListener("input", () => renderGlossaryList(filterGlossary(inputGlossarySearch.value, selectGlossaryCategory.value)));
       selectGlossaryCategory.addEventListener("change", () => renderGlossaryList(filterGlossary(inputGlossarySearch.value, selectGlossaryCategory.value)));
 
-      // PUBLICATIONS (mantido como estava no seu app)
+      // ✅ PUBLICATIONS (CORRIGIDO PARA SEU SCHEMA)
       const publicationsTitle = document.getElementById("publicationsTitle");
       const publicationsStatus = document.getElementById("publicationsStatus");
       const publicationsList = document.getElementById("publicationsList");
@@ -851,13 +865,17 @@
       const selectPublicationsType = document.getElementById("selectPublicationsType");
       let publicationsCache = [];
 
+      function pubDisplayTitle(p) {
+        return safeText(p.title_pt) || safeText(p.title_en) || safeText(p.title_jp) || "Publicação";
+      }
+
       async function openPublications() {
         publicationsTitle.textContent = `${formatFranchise(state.franchise)} · Publicações`;
         showView("publications");
         inputPublicationsSearch.value = "";
         selectPublicationsType.value = "";
         await loadPublications();
-        populateSelect(selectPublicationsType, publicationsCache.map(x => safeText(x.type)).filter(Boolean), "Todos");
+        populateSelect(selectPublicationsType, publicationsCache.map(x => safeText(x.pub_type)).filter(Boolean), "Todos");
         renderPublicationsList(filterPublications("", ""));
       }
 
@@ -867,23 +885,29 @@
 
         const { data, error } = await supabase
           .from("publications")
-          .select("id,title,franchise,year,type,description,url,cover_url")
+          .select("id,title_en,title_pt,title_jp,pub_type,publisher,issue,year,month,isbn,language,franchise,era,cover_url,notes,url,created_at")
           .eq("franchise", state.franchise);
 
         if (error) {
-          publicationsStatus.textContent = "Erro ao carregar publicações (verifique a tabela/colunas).";
+          publicationsStatus.textContent = "Erro ao carregar publicações.";
           publicationsCache = [];
           return;
         }
 
         const list = Array.isArray(data) ? data : [];
-        list.sort((a, b) => (safeText(b.year)).localeCompare(safeText(a.year)) || safeText(a.title).localeCompare(safeText(b.title)));
+        list.sort((a, b) => {
+          const ay = Number(a.year || 0), by = Number(b.year || 0);
+          if (by !== ay) return by - ay;
+          return pubDisplayTitle(a).localeCompare(pubDisplayTitle(b), "pt", { sensitivity: "base" });
+        });
+
         publicationsCache = list;
         publicationsStatus.textContent = `${list.length} itens`;
       }
 
       function populateSelect(selectEl, values, allLabel) {
-        const uniq = Array.from(new Set(values)).sort((a,b) => a.localeCompare(b));
+        const uniq = Array.from(new Set(values.map(v => safeText(v)).filter(Boolean)))
+          .sort((a,b) => a.localeCompare(b));
         selectEl.innerHTML = `<option value="">${allLabel}</option>`;
         for (const v of uniq) {
           const opt = document.createElement("option");
@@ -893,15 +917,19 @@
         }
       }
 
-      function filterPublications(q, type) {
+      function filterPublications(q, pubType) {
         const query = safeText(q).toLowerCase();
-        const t = safeText(type).toLowerCase();
+        const t = safeText(pubType).toLowerCase();
 
         return publicationsCache.filter((p) => {
-          if (t && safeText(p.type).toLowerCase() !== t) return false;
+          if (t && safeText(p.pub_type).toLowerCase() !== t) return false;
           if (!query) return true;
-          return [p.title, p.type, p.year, p.description]
-            .some((v) => safeText(v).toLowerCase().includes(query));
+          return [
+            p.title_pt, p.title_en, p.title_jp,
+            p.pub_type, p.publisher, p.issue,
+            p.year, p.month, p.isbn, p.language,
+            p.notes, p.era
+          ].some((v) => safeText(v).toLowerCase().includes(query));
         });
       }
 
@@ -917,8 +945,8 @@
           el.className = "item";
 
           const cover = safeText(p.cover_url);
-          const title = safeText(p.title) || "Publicação";
-          const type = safeText(p.type);
+          const title = pubDisplayTitle(p);
+          const type = safeText(p.pub_type);
           const year = safeText(p.year);
 
           el.innerHTML = `
@@ -932,11 +960,11 @@
                   <div class="year">${escapeHtml(year)}</div>
                 </div>
                 <div class="muted" style="font-size:12px; line-height:1.2;">
-                  ${escapeHtml(type)}
+                  ${escapeHtml(type)}${hasValue(p.publisher) ? " · " + escapeHtml(p.publisher) : ""}
                 </div>
               </div>
             </div>
-            ${hasValue(p.description) ? `<div class="desc">${escapeHtml(p.description)}</div>` : ``}
+            ${hasValue(p.notes) ? `<div class="desc">${escapeHtml(p.notes)}</div>` : ``}
           `;
 
           el.addEventListener("click", () => {
@@ -945,11 +973,19 @@
             setModalLink(p.url);
 
             const rows = [
-              specRow("Título", p.title),
-              specRow("Tipo", p.type),
+              specRow("Título (PT)", p.title_pt),
+              specRow("Título (EN)", p.title_en),
+              specRow("Título (JP)", p.title_jp),
+              specRow("Tipo", p.pub_type),
+              specRow("Editora", p.publisher),
+              specRow("Edição", p.issue),
               specRow("Ano", p.year),
+              specRow("Mês", p.month),
+              specRow("Idioma", p.language),
+              specRow("ISBN", p.isbn),
+              specRow("Era", p.era),
               specRow("Franquia", formatFranchise(p.franchise)),
-              specRow("Descrição", p.description),
+              specRow("Notas", p.notes),
               specRow("URL", p.url)
             ].filter(Boolean).join("");
 
@@ -961,10 +997,14 @@
         }
       }
 
-      inputPublicationsSearch.addEventListener("input", () => renderPublicationsList(filterPublications(inputPublicationsSearch.value, selectPublicationsType.value)));
-      selectPublicationsType.addEventListener("change", () => renderPublicationsList(filterPublications(inputPublicationsSearch.value, selectPublicationsType.value)));
+      inputPublicationsSearch.addEventListener("input", () =>
+        renderPublicationsList(filterPublications(inputPublicationsSearch.value, selectPublicationsType.value))
+      );
+      selectPublicationsType.addEventListener("change", () =>
+        renderPublicationsList(filterPublications(inputPublicationsSearch.value, selectPublicationsType.value))
+      );
 
-      // COLLECTIBLES (mantido como estava no seu app)
+      // ✅ COLLECTIBLES (CORRIGIDO PARA SEU SCHEMA)
       const collectiblesTitle = document.getElementById("collectiblesTitle");
       const collectiblesStatus = document.getElementById("collectiblesStatus");
       const collectiblesList = document.getElementById("collectiblesList");
@@ -972,13 +1012,18 @@
       const selectCollectiblesCategory = document.getElementById("selectCollectiblesCategory");
       let collectiblesCache = [];
 
+      function colDisplayName(it) {
+        return safeText(it.name_pt) || safeText(it.name_en) || safeText(it.name_jp) || "Colecionável";
+      }
+
       async function openCollectibles() {
         collectiblesTitle.textContent = `${formatFranchise(state.franchise)} · Colecionáveis`;
         showView("collectibles");
         inputCollectiblesSearch.value = "";
         selectCollectiblesCategory.value = "";
         await loadCollectibles();
-        populateSelect(selectCollectiblesCategory, collectiblesCache.map(x => safeText(x.category)).filter(Boolean), "Todas");
+        // filtro principal por item_type (belt/figure/mecha/weapon etc)
+        populateSelect(selectCollectiblesCategory, collectiblesCache.map(x => safeText(x.item_type)).filter(Boolean), "Todos");
         renderCollectiblesList(filterCollectibles("", ""));
       }
 
@@ -988,30 +1033,36 @@
 
         const { data, error } = await supabase
           .from("collectibles")
-          .select("id,name,franchise,year,category,brand,description,image_url,url")
+          .select("id,name_en,name_pt,name_jp,franchise,era,year,line,item_type,manufacturer,series_code,sku_code,image_url,jp_search,notes,rarity,status,created_at")
           .eq("franchise", state.franchise);
 
         if (error) {
-          collectiblesStatus.textContent = "Erro ao carregar colecionáveis (verifique a tabela/colunas).";
+          collectiblesStatus.textContent = "Erro ao carregar colecionáveis.";
           collectiblesCache = [];
           return;
         }
 
         const list = Array.isArray(data) ? data : [];
-        list.sort((a, b) => safeText(a.name).localeCompare(safeText(b.name), "pt", { sensitivity: "base" }));
+        list.sort((a, b) => colDisplayName(a).localeCompare(colDisplayName(b), "pt", { sensitivity: "base" }));
         collectiblesCache = list;
         collectiblesStatus.textContent = `${list.length} itens`;
       }
 
-      function filterCollectibles(q, cat) {
+      function filterCollectibles(q, itemType) {
         const query = safeText(q).toLowerCase();
-        const c = safeText(cat).toLowerCase();
+        const t = safeText(itemType).toLowerCase();
 
         return collectiblesCache.filter((it) => {
-          if (c && safeText(it.category).toLowerCase() !== c) return false;
+          if (t && safeText(it.item_type).toLowerCase() !== t) return false;
           if (!query) return true;
-          return [it.name, it.brand, it.category, it.year, it.description]
-            .some((v) => safeText(v).toLowerCase().includes(query));
+
+          return [
+            it.name_pt, it.name_en, it.name_jp,
+            it.line, it.item_type, it.manufacturer,
+            it.series_code, it.sku_code,
+            it.jp_search, it.notes, it.rarity, it.status,
+            it.year, it.era
+          ].some((v) => safeText(v).toLowerCase().includes(query));
         });
       }
 
@@ -1027,7 +1078,12 @@
           el.className = "item";
 
           const img = safeText(it.image_url);
-          const name = safeText(it.name) || "Colecionável";
+          const name = colDisplayName(it);
+          const year = safeText(it.year);
+          const subtitleParts = [];
+          if (hasValue(it.line)) subtitleParts.push(safeText(it.line));
+          if (hasValue(it.item_type)) subtitleParts.push(safeText(it.item_type));
+          if (hasValue(it.manufacturer)) subtitleParts.push(safeText(it.manufacturer));
 
           el.innerHTML = `
             <div class="itemTop">
@@ -1037,29 +1093,37 @@
               <div class="meta">
                 <div class="nameLine">
                   <div class="name">${escapeHtml(name)}</div>
-                  <div class="year">${hasValue(it.year) ? escapeHtml(it.year) : ""}</div>
+                  <div class="year">${escapeHtml(year)}</div>
                 </div>
                 <div class="muted" style="font-size:12px; line-height:1.2;">
-                  ${escapeHtml(safeText(it.category))}${hasValue(it.brand) ? " · " + escapeHtml(it.brand) : ""}
+                  ${escapeHtml(subtitleParts.join(" · "))}
                 </div>
               </div>
             </div>
-            ${hasValue(it.description) ? `<div class="desc">${escapeHtml(it.description)}</div>` : ``}
+            ${hasValue(it.notes) ? `<div class="desc">${escapeHtml(it.notes)}</div>` : ``}
           `;
 
           el.addEventListener("click", () => {
             modalTitle.textContent = name;
             setModalImage(img, name);
-            setModalLink(it.url);
+            setModalLink(""); // collectibles não tem URL no seu schema atual; se quiser, eu adiciono campo depois
 
             const rows = [
-              specRow("Nome", it.name),
-              specRow("Categoria", it.category),
-              specRow("Marca", it.brand),
+              specRow("Nome (PT)", it.name_pt),
+              specRow("Nome (EN)", it.name_en),
+              specRow("Nome (JP)", it.name_jp),
+              specRow("Linha", it.line),
+              specRow("Tipo", it.item_type),
+              specRow("Fabricante", it.manufacturer),
               specRow("Ano", it.year),
-              specRow("Franquia", formatFranchise(it.franchise)),
-              specRow("Descrição", it.description),
-              specRow("URL", it.url)
+              specRow("Era", it.era),
+              specRow("Series code", it.series_code),
+              specRow("SKU", it.sku_code),
+              specRow("Status", it.status),
+              specRow("Raridade", it.rarity),
+              specRow("JP search", it.jp_search),
+              specRow("Notas", it.notes),
+              specRow("Franquia", formatFranchise(it.franchise))
             ].filter(Boolean).join("");
 
             modalBody.innerHTML = renderSpecCard(rows);
@@ -1070,8 +1134,12 @@
         }
       }
 
-      inputCollectiblesSearch.addEventListener("input", () => renderCollectiblesList(filterCollectibles(inputCollectiblesSearch.value, selectCollectiblesCategory.value)));
-      selectCollectiblesCategory.addEventListener("change", () => renderCollectiblesList(filterCollectibles(inputCollectiblesSearch.value, selectCollectiblesCategory.value)));
+      inputCollectiblesSearch.addEventListener("input", () =>
+        renderCollectiblesList(filterCollectibles(inputCollectiblesSearch.value, selectCollectiblesCategory.value))
+      );
+      selectCollectiblesCategory.addEventListener("change", () =>
+        renderCollectiblesList(filterCollectibles(inputCollectiblesSearch.value, selectCollectiblesCategory.value))
+      );
 
       function init() {
         renderHome();
