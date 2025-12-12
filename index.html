@@ -60,15 +60,13 @@
         user-select: none;
       }
 
-      /* MAIN agora vira "stage" de views animadas */
       main {
         flex: 1;
         position: relative;
-        overflow: hidden; /* <- importante pra esconder a view deslizando */
+        overflow: hidden;
         padding: 0;
       }
 
-      /* Container central "app-like" */
       .mobileContainer {
         max-width: 380px;
         margin: 0 auto;
@@ -78,7 +76,6 @@
         -webkit-overflow-scrolling: touch;
       }
 
-      /* VIEWS como páginas empilhadas */
       .view {
         position: absolute;
         inset: 0;
@@ -96,13 +93,11 @@
         pointer-events: auto;
       }
 
-      /* Estados temporários da animação */
       .view.enterFromRight { opacity: 0; transform: translateX(24px); }
       .view.enterFromLeft  { opacity: 0; transform: translateX(-24px); }
       .view.leaveToLeft    { opacity: 0; transform: translateX(-24px); }
       .view.leaveToRight   { opacity: 0; transform: translateX(24px); }
 
-      /* Respeita "reduzir movimentos" do sistema */
       @media (prefers-reduced-motion: reduce) {
         .view, .view.active {
           transition: none !important;
@@ -116,7 +111,6 @@
 
       .grid { display: grid; gap: 10px; justify-items: center; }
 
-      /* BOTÕES menores e centralizados */
       .btn {
         width: 100%;
         max-width: 320px;
@@ -324,7 +318,6 @@
       </header>
 
       <main>
-        <!-- HOME -->
         <section class="view active" id="viewHome">
           <div class="mobileContainer">
             <div class="sectionTitle">Temas</div>
@@ -333,7 +326,6 @@
           </div>
         </section>
 
-        <!-- FRANCHISE HUB -->
         <section class="view" id="viewFranchise">
           <div class="mobileContainer">
             <div class="backRow">
@@ -365,7 +357,6 @@
           </div>
         </section>
 
-        <!-- CHARACTERS -->
         <section class="view" id="viewCharacters">
           <div class="mobileContainer">
             <div class="backRow">
@@ -383,7 +374,6 @@
           </div>
         </section>
 
-        <!-- GLOSSARY -->
         <section class="view" id="viewGlossary">
           <div class="mobileContainer">
             <div class="backRow">
@@ -404,7 +394,6 @@
           </div>
         </section>
 
-        <!-- PUBLICATIONS -->
         <section class="view" id="viewPublications">
           <div class="mobileContainer">
             <div class="backRow">
@@ -425,7 +414,6 @@
           </div>
         </section>
 
-        <!-- COLLECTIBLES -->
         <section class="view" id="viewCollectibles">
           <div class="mobileContainer">
             <div class="backRow">
@@ -450,7 +438,6 @@
       <footer>v0.2 · Henshin DB · Author: Mayara Gouveia</footer>
     </div>
 
-    <!-- MODAL -->
     <div class="modalOverlay" id="modalOverlay" role="dialog" aria-modal="true">
       <div class="modal">
         <div class="modalHeader">
@@ -503,25 +490,20 @@
         const from = views[currentView];
         const to = views[name];
 
-        // prepara "to" fora da tela no sentido correto
         to.classList.remove("enterFromRight","enterFromLeft","leaveToLeft","leaveToRight","active");
         from.classList.remove("enterFromRight","enterFromLeft","leaveToLeft","leaveToRight");
 
         if (dir === "forward") to.classList.add("enterFromRight");
         else to.classList.add("enterFromLeft");
 
-        // força reflow pra transição pegar
         void to.offsetWidth;
 
-        // anima saída
         if (dir === "forward") from.classList.add("leaveToLeft");
         else from.classList.add("leaveToRight");
 
-        // anima entrada
         to.classList.add("active");
         to.classList.remove("enterFromRight","enterFromLeft");
 
-        // limpa a view antiga quando terminar
         const done = () => {
           from.classList.remove("active","leaveToLeft","leaveToRight");
           from.removeEventListener("transitionend", done);
@@ -538,6 +520,17 @@
         if (key === "super sentai") return "Super Sentai";
         if (key === "metal hero") return "Metal Hero";
         return key;
+      }
+
+      function normalizeFranchise(v) {
+        // "Kamen Rider", "kamen_rider", "kamen-rider" -> "kamen rider"
+        return String(v || "")
+          .trim()
+          .toLowerCase()
+          .replace(/[_-]+/g, " ")
+          .replace(/\s+/g, " ")
+          .replace(/[^a-z\s]/g, "")  // mantém simples/seguro
+          .trim();
       }
 
       function safeText(v) {
@@ -590,6 +583,42 @@
           headerChip.textContent = error ? "Conexão com erro" : "Online";
         } catch {
           headerChip.textContent = "Offline";
+        }
+      }
+
+      async function fetchWithFranchiseFallback({ table, select, franchiseKey, statusEl }) {
+        const wanted = normalizeFranchise(franchiseKey);
+
+        // 1) tenta filtrado no server (mais rápido)
+        try {
+          const { data, error } = await supabase.from(table).select(select).eq("franchise", franchiseKey);
+          if (error) {
+            console.warn(`[${table}] eq(franchise) error:`, error);
+          } else if (Array.isArray(data) && data.length > 0) {
+            return data;
+          }
+        } catch (e) {
+          console.warn(`[${table}] eq(franchise) exception:`, e);
+        }
+
+        // 2) fallback: busca tudo e filtra client-side por normalização
+        try {
+          const { data, error } = await supabase.from(table).select(select);
+          if (error) {
+            console.warn(`[${table}] fallback select error:`, error);
+            if (statusEl) statusEl.textContent = `Erro ao carregar ${table} (verifique tabela/colunas/RLS).`;
+            return [];
+          }
+          const list = Array.isArray(data) ? data : [];
+          const filtered = list.filter((row) => normalizeFranchise(row.franchise) === wanted);
+          if (filtered.length === 0 && statusEl) {
+            statusEl.textContent = `0 itens — (provável mismatch de franchise). Eu tentei normalizar, mas não bateu.`;
+          }
+          return filtered;
+        } catch (e) {
+          console.warn(`[${table}] fallback exception:`, e);
+          if (statusEl) statusEl.textContent = `Erro ao carregar ${table}.`;
+          return [];
         }
       }
 
@@ -909,18 +938,14 @@
         publicationsStatus.textContent = "Carregando...";
         publicationsList.innerHTML = "";
 
-        const { data, error } = await supabase
-          .from("publications")
-          .select("id,title,franchise,year,type,description,url,cover_url")
-          .eq("franchise", state.franchise);
+        // ✅ fallback robusto
+        const list = await fetchWithFranchiseFallback({
+          table: "publications",
+          select: "id,title,franchise,year,type,description,url,cover_url",
+          franchiseKey: state.franchise,
+          statusEl: publicationsStatus
+        });
 
-        if (error) {
-          publicationsStatus.textContent = "Erro ao carregar publicações (verifique a tabela/colunas).";
-          publicationsCache = [];
-          return;
-        }
-
-        const list = Array.isArray(data) ? data : [];
         list.sort((a, b) => (safeText(b.year)).localeCompare(safeText(a.year)) || safeText(a.title).localeCompare(safeText(b.title)));
         publicationsCache = list;
         publicationsStatus.textContent = `${list.length} itens`;
@@ -1028,18 +1053,14 @@
         collectiblesStatus.textContent = "Carregando...";
         collectiblesList.innerHTML = "";
 
-        const { data, error } = await supabase
-          .from("collectibles")
-          .select("id,name,franchise,year,category,brand,description,image_url,url")
-          .eq("franchise", state.franchise);
+        // ✅ fallback robusto
+        const list = await fetchWithFranchiseFallback({
+          table: "collectibles",
+          select: "id,name,franchise,year,category,brand,description,image_url,url",
+          franchiseKey: state.franchise,
+          statusEl: collectiblesStatus
+        });
 
-        if (error) {
-          collectiblesStatus.textContent = "Erro ao carregar colecionáveis (verifique a tabela/colunas).";
-          collectiblesCache = [];
-          return;
-        }
-
-        const list = Array.isArray(data) ? data : [];
         list.sort((a, b) => safeText(a.name).localeCompare(safeText(b.name), "pt", { sensitivity: "base" }));
         collectiblesCache = list;
         collectiblesStatus.textContent = `${list.length} itens`;
