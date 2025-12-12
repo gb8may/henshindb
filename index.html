@@ -2,825 +2,887 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Henshin DB</title>
-    <style>
-      :root{
-        --bg:#0b0e14;
-        --panel:#111827;
-        --panel2:#0f172a;
-        --text:#e5e7eb;
-        --muted:#94a3b8;
-        --line:rgba(255,255,255,.08);
-        --shadow: 0 16px 50px rgba(0,0,0,.55);
-        --radius:16px;
-        --radius2:22px;
-        --pad:16px;
-        --max:980px;
-      }
-      *{box-sizing:border-box}
-      html,body{height:100%}
-      body{
-        margin:0;
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-        background: radial-gradient(1200px 800px at 50% -10%, rgba(99,102,241,.25), transparent 55%),
-                    radial-gradient(1000px 700px at 110% 10%, rgba(34,197,94,.12), transparent 50%),
-                    radial-gradient(900px 700px at -10% 20%, rgba(239,68,68,.10), transparent 50%),
-                    var(--bg);
-        color:var(--text);
-        overflow-x:hidden;
-      }
-      a{color:inherit;text-decoration:none}
-      .app{
-        min-height:100%;
-        display:flex;
-        flex-direction:column;
-      }
-      header{
-        position:sticky;
-        top:0;
-        z-index:20;
-        backdrop-filter: blur(10px);
-        background: rgba(11,14,20,.72);
-        border-bottom:1px solid var(--line);
-      }
-      .bar{
-        max-width:var(--max);
-        margin:0 auto;
-        padding:12px var(--pad);
-        display:flex;
-        align-items:center;
-        gap:12px;
-      }
-      .brand{
-        display:flex;
-        align-items:center;
-        gap:10px;
-        min-width:0;
-      }
-      .dot{
-        width:10px;height:10px;border-radius:999px;
-        background: linear-gradient(135deg, rgba(99,102,241,1), rgba(34,197,94,1));
-        box-shadow:0 0 0 4px rgba(99,102,241,.15);
-        flex:0 0 auto;
-      }
-      .brand h1{
-        font-size:16px;
-        margin:0;
-        letter-spacing:.2px;
-        white-space:nowrap;
-        overflow:hidden;
-        text-overflow:ellipsis;
-      }
-      .crumb{
-        margin-left:auto;
-        color:var(--muted);
-        font-size:12px;
-        white-space:nowrap;
-      }
-      main{
-        flex:1;
-        width:100%;
-      }
-      .container{
-        max-width:var(--max);
-        margin:0 auto;
-        padding:16px var(--pad) 28px;
-      }
-      .title{
-        margin:14px 0 10px;
-        font-size:18px;
-        letter-spacing:.2px;
-      }
-      .subtitle{
-        margin:0 0 18px;
-        color:var(--muted);
-        font-size:13px;
-        line-height:1.45;
-      }
-
-      .grid{
-        display:grid;
-        grid-template-columns: 1fr;
-        gap:12px;
-      }
-      .card{
-        background: linear-gradient(180deg, rgba(17,24,39,.92), rgba(15,23,42,.92));
-        border:1px solid var(--line);
-        border-radius: var(--radius2);
-        padding:14px;
-        box-shadow: 0 10px 28px rgba(0,0,0,.35);
-      }
-      .row{
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:12px;
-      }
-      .chip{
-        display:inline-flex;
-        align-items:center;
-        gap:8px;
-        padding:10px 12px;
-        border-radius:999px;
-        background: rgba(255,255,255,.06);
-        border:1px solid var(--line);
-        color:var(--text);
-        font-weight:600;
-        font-size:13px;
-      }
-      .chip small{font-weight:500;color:var(--muted)}
-      .btn{
-        appearance:none;
-        border:1px solid var(--line);
-        background: rgba(255,255,255,.06);
-        color:var(--text);
-        border-radius: 14px;
-        padding:12px 12px;
-        font-weight:700;
-        font-size:14px;
-        width:100%;
-        text-align:left;
-      }
-      .btn:active{transform: translateY(1px)}
-      .btnRow{
-        display:grid;
-        grid-template-columns: 1fr;
-        gap:10px;
-        margin-top:12px;
-      }
-
-      .topActions{
-        display:flex;
-        gap:10px;
-        flex-wrap:wrap;
-        margin:12px 0 8px;
-      }
-      .pill{
-        display:inline-flex;
-        align-items:center;
-        gap:8px;
-        padding:10px 12px;
-        border-radius: 999px;
-        background: rgba(255,255,255,.06);
-        border:1px solid var(--line);
-        font-size:13px;
-        color:var(--text);
-        font-weight:700;
-      }
-      .pill.secondary{
-        color:var(--muted);
-        font-weight:600;
-      }
-      .pill:active{transform: translateY(1px)}
-
-      .input{
-        width:100%;
-        padding:12px 12px;
-        border-radius: 14px;
-        border:1px solid var(--line);
-        background: rgba(255,255,255,.04);
-        color:var(--text);
-        outline:none;
-        font-size:14px;
-      }
-      .list{
-        margin-top:10px;
-        display:flex;
-        flex-direction:column;
-        gap:10px;
-      }
-      .item{
-        display:flex;
-        gap:12px;
-        align-items:flex-start;
-        padding:12px;
-        border-radius: var(--radius2);
-        background: rgba(255,255,255,.04);
-        border:1px solid var(--line);
-      }
-      .thumb{
-        width:42px;height:42px;
-        border-radius:12px;
-        background: rgba(255,255,255,.05);
-        border:1px solid var(--line);
-        overflow:hidden;
-        flex:0 0 auto;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        color:var(--muted);
-        font-weight:800;
-      }
-      .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-      .itemMain{min-width:0;flex:1}
-      .itemTitle{
-        margin:0;
-        font-size:14px;
-        font-weight:800;
-        letter-spacing:.2px;
-        line-height:1.2;
-      }
-      .itemMeta{
-        margin:6px 0 0;
-        font-size:12px;
-        color:var(--muted);
-        line-height:1.35;
-      }
-      .tagRow{
-        margin-top:8px;
-        display:flex;
-        gap:8px;
-        flex-wrap:wrap;
-      }
-      .tag{
-        font-size:11px;
-        color:rgba(229,231,235,.92);
-        background: rgba(99,102,241,.14);
-        border:1px solid rgba(99,102,241,.28);
-        padding:6px 10px;
-        border-radius:999px;
-        white-space:nowrap;
-      }
-
-      .empty{
-        margin-top:14px;
-        padding:14px;
-        border-radius: var(--radius2);
-        border:1px dashed var(--line);
-        color:var(--muted);
-        font-size:13px;
-        line-height:1.45;
-      }
-
-      footer{
-        border-top:1px solid var(--line);
-        color:var(--muted);
-        font-size:12px;
-        padding:14px var(--pad);
-        text-align:center;
-      }
-
-      .overlay{
-        position:fixed;
-        inset:0;
-        background: rgba(0,0,0,.62);
-        display:none;
-        align-items:center;
-        justify-content:center;
-        padding: 18px;
-        z-index:50;
-      }
-      .overlay.open{display:flex}
-      .modal{
-        width:min(560px, 100%);
-        max-height: min(86vh, 720px);
-        overflow:auto;
-        border-radius: 22px;
-        background: linear-gradient(180deg, rgba(17,24,39,.98), rgba(15,23,42,.98));
-        border:1px solid var(--line);
-        box-shadow: var(--shadow);
-      }
-      .modalHeader{
-        position:sticky;
-        top:0;
-        background: rgba(17,24,39,.92);
-        backdrop-filter: blur(10px);
-        border-bottom:1px solid var(--line);
-        padding: 12px 14px;
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:12px;
-        z-index:1;
-      }
-      .modalHeader h3{
-        margin:0;
-        font-size:14px;
-        font-weight:900;
-        letter-spacing:.2px;
-        overflow:hidden;
-        text-overflow:ellipsis;
-        white-space:nowrap;
-      }
-      .close{
-        border:1px solid var(--line);
-        background: rgba(255,255,255,.06);
-        color:var(--text);
-        border-radius: 12px;
-        padding:10px 12px;
-        font-weight:800;
-        font-size:13px;
-      }
-      .modalBody{padding:14px}
-      .heroImg{
-        width:100%;
-        border-radius: 18px;
-        overflow:hidden;
-        border:1px solid var(--line);
-        background: rgba(255,255,255,.04);
-      }
-      .heroImg img{width:100%;height:auto;display:block}
-      .kv{
-        margin-top:12px;
-        display:grid;
-        grid-template-columns: 1fr;
-        gap:10px;
-      }
-      .kvBlock{
-        padding:12px;
-        border-radius: 18px;
-        border:1px solid var(--line);
-        background: rgba(255,255,255,.04);
-      }
-      .kvLabel{
-        font-size:11px;
-        color:var(--muted);
-        letter-spacing:.12em;
-        text-transform:uppercase;
-        margin:0 0 6px;
-      }
-      .kvValue{
-        margin:0;
-        font-size:13px;
-        line-height:1.45;
-        color:var(--text);
-        white-space:pre-wrap;
-      }
-
-      @media (min-width: 640px){
-        .grid{grid-template-columns: 1fr 1fr}
-        .btnRow{grid-template-columns: 1fr}
-      }
-    </style>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      :root {
+        --bg: #0b0e14;
+        --panel: rgba(255, 255, 255, 0.06);
+        --panel2: rgba(255, 255, 255, 0.08);
+        --border: rgba(255, 255, 255, 0.12);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.68);
+        --shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
+        --radius: 16px;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body { height: 100%; }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background: radial-gradient(1200px 600px at 20% -10%, rgba(123, 92, 255, 0.25), transparent 60%),
+                    radial-gradient(900px 500px at 90% 10%, rgba(0, 192, 255, 0.18), transparent 55%),
+                    var(--bg);
+        color: var(--text);
+        overflow: hidden;
+      }
+
+      .app {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        padding: 14px 16px 10px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(10px);
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .brand .title {
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        font-size: 16px;
+        line-height: 1.2;
+      }
+
+      .brand .subtitle {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.2;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        font-size: 12px;
+        color: var(--muted);
+        user-select: none;
+      }
+
+      main {
+        flex: 1;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 14px 14px 90px;
+      }
+
+      .view { display: none; }
+      .view.active { display: block; }
+
+      .sectionTitle {
+        margin: 6px 2px 10px;
+        font-weight: 700;
+        font-size: 16px;
+        line-height: 1.2;
+      }
+
+      .sectionHint {
+        margin: -4px 2px 12px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.25;
+      }
+
+      .grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 14px 14px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: var(--panel);
+        color: inherit;
+        font-size: 16px;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .btn:active { transform: translateY(1px); }
+
+      .btn small {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .backRow {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .ghostBtn {
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        color: inherit;
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      .ghostBtn:active { transform: translateY(1px); }
+
+      .searchBox {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin: 8px 0 12px;
+      }
+
+      input[type="search"], select {
+        width: 100%;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--text);
+        padding: 12px 12px;
+        border-radius: 12px;
+        outline: none;
+        font-size: 14px;
+      }
+
+      .list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .item {
+        border: 1px solid var(--border);
+        background: var(--panel);
+        border-radius: var(--radius);
+        padding: 12px;
+        cursor: pointer;
+      }
+
+      .item:active { transform: translateY(1px); }
+
+      .itemTop {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .thumb {
+        width: 54px;
+        height: 54px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .meta {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .nameLine {
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+        min-width: 0;
+      }
+
+      .name {
+        font-weight: 700;
+        font-size: 14px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .year {
+        font-size: 12px;
+        color: var(--muted);
+        flex: 0 0 auto;
+      }
+
+      .desc {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.3;
+      }
+
+      .pillRow {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .muted { color: var(--muted); }
+
+      footer {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-top: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        padding: 10px 14px;
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modalOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        z-index: 50;
+      }
+
+      .modalOverlay.show { display: flex; }
+
+      .modal {
+        width: min(520px, 100%);
+        max-height: 84vh;
+        overflow: auto;
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        background: rgba(15, 18, 26, 0.92);
+        box-shadow: var(--shadow);
+        padding: 14px;
+      }
+
+      .modalHeader {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .modalTitle {
+        font-weight: 800;
+        font-size: 15px;
+        line-height: 1.2;
+      }
+
+      .closeBtn {
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        color: inherit;
+        border-radius: 12px;
+        padding: 8px 10px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+
+      .modalImage {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+        margin-bottom: 10px;
+      }
+
+      .modalImage img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .kv {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .kvRow {
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 14px;
+        padding: 10px 10px;
+      }
+
+      .kvLabel {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      .kvValue {
+        font-size: 13px;
+        line-height: 1.35;
+        color: var(--text);
+        word-break: break-word;
+      }
+    </style>
   </head>
 
   <body>
     <div class="app">
       <header>
-        <div class="bar">
+        <div class="topbar">
           <div class="brand">
-            <div class="dot"></div>
-            <h1 id="headerTitle">Henshin DB</h1>
+            <div class="title">Henshin DB</div>
+            <div class="subtitle" id="headerSubtitle">Home</div>
           </div>
-          <div class="crumb" id="crumb"></div>
+          <div class="chip" id="headerChip">Offline</div>
         </div>
       </header>
 
       <main>
-        <div class="container">
-          <section id="viewHome" style="display:none">
-            <div class="title">Home</div>
-            <p class="subtitle">Escolha uma franquia para navegar.</p>
+        <section class="view active" id="viewHome">
+          <div class="sectionTitle">Temas</div>
+          <div class="sectionHint">Escolha um tema para navegar.</div>
+          <div class="grid" id="homeCategories"></div>
+        </section>
 
-            <div class="grid">
-              <div class="card">
-                <div class="row">
-                  <div class="chip">Kamen Rider <small>Riders</small></div>
-                </div>
-                <div class="btnRow">
-                  <button class="btn" data-go-franchise="kamen rider">Abrir</button>
-                </div>
-              </div>
+        <section class="view" id="viewFranchise">
+          <div class="backRow">
+            <button class="ghostBtn" id="btnBackToHome">Voltar</button>
+          </div>
 
-              <div class="card">
-                <div class="row">
-                  <div class="chip">Super Sentai <small>Equipes</small></div>
-                </div>
-                <div class="btnRow">
-                  <button class="btn" data-go-franchise="super sentai">Abrir</button>
-                </div>
-              </div>
+          <div class="sectionTitle" id="franchiseTitle">Tema</div>
+          <div class="grid">
+            <button class="btn" id="btnGoCharacters">
+              <span>Personagens</span>
+              <small>Lista completa (A–Z)</small>
+            </button>
 
-              <div class="card">
-                <div class="row">
-                  <div class="chip">Metal Hero <small>Heróis</small></div>
-                </div>
-                <div class="btnRow">
-                  <button class="btn" data-go-franchise="metal hero">Abrir</button>
-                </div>
-              </div>
-            </div>
-          </section>
+            <button class="btn" id="btnGoGlossary">
+              <span>Glossário</span>
+              <small>Termos JP → PT/EN</small>
+            </button>
+          </div>
+        </section>
 
-          <section id="viewFranchise" style="display:none">
-            <div class="title" id="frTitle"></div>
-            <p class="subtitle" id="frSubtitle"></p>
+        <section class="view" id="viewCharacters">
+          <div class="backRow">
+            <button class="ghostBtn" id="btnBackToFranchiseFromCharacters">Voltar</button>
+          </div>
 
-            <div class="topActions">
-              <button class="pill secondary" id="btnBackHome">Home</button>
-              <span class="pill secondary" id="frPill"></span>
-            </div>
+          <div class="sectionTitle" id="charactersTitle">Personagens</div>
 
-            <div class="grid">
-              <div class="card">
-                <div class="row">
-                  <div class="chip">Personagens <small>lista completa</small></div>
-                </div>
-                <div class="btnRow">
-                  <button class="btn" id="btnGoCharacters">Abrir lista</button>
-                </div>
-              </div>
+          <div class="searchBox">
+            <input type="search" id="inputCharacterSearch" placeholder="Buscar por nome (EN/PT/JP/romaji)..." />
+          </div>
 
-              <div class="card">
-                <div class="row">
-                  <div class="chip">Glossário <small>termos</small></div>
-                </div>
-                <div class="btnRow">
-                  <button class="btn" id="btnGoGlossary">Abrir glossário</button>
-                </div>
-              </div>
-            </div>
-          </section>
+          <div class="muted" id="charactersStatus"></div>
+          <div class="list" id="charactersList" style="margin-top: 12px;"></div>
+        </section>
 
-          <section id="viewCharacters" style="display:none">
-            <div class="title" id="charsTitle"></div>
-            <p class="subtitle" id="charsSubtitle"></p>
+        <section class="view" id="viewGlossary">
+          <div class="backRow">
+            <button class="ghostBtn" id="btnBackToFranchiseFromGlossary">Voltar</button>
+          </div>
 
-            <div class="topActions">
-              <button class="pill secondary" id="btnBackFranchise">Voltar</button>
-              <button class="pill" id="btnReload">Recarregar</button>
-            </div>
+          <div class="sectionTitle">Glossário</div>
 
-            <input class="input" id="searchInput" placeholder="Buscar pelo nome (EN/PT/JP)..." />
+          <div class="searchBox">
+            <input type="search" id="inputGlossarySearch" placeholder="Buscar por JP/romaji/EN/PT..." />
+            <select id="selectGlossaryCategory">
+              <option value="">Todas</option>
+            </select>
+          </div>
 
-            <div class="list" id="charsList"></div>
-            <div class="empty" id="charsEmpty" style="display:none"></div>
-          </section>
-
-          <section id="viewGlossary" style="display:none">
-            <div class="title">Glossário</div>
-            <p class="subtitle">Tela placeholder. Se você já tiver a tabela do glossário no Supabase, eu conecto aqui igual a de personagens.</p>
-
-            <div class="topActions">
-              <button class="pill secondary" id="btnBackFromGlossary">Voltar</button>
-            </div>
-
-            <div class="empty">Me diga o nome da sua tabela de glossário e as colunas principais (ex: term_en, term_jp, term_pt, definition) que eu ajusto em 1 mensagem.</div>
-          </section>
-        </div>
+          <div class="muted" id="glossaryStatus"></div>
+          <div class="list" id="glossaryList" style="margin-top: 12px;"></div>
+        </section>
       </main>
 
       <footer>v0.1 · Henshin DB · Author: Mayara Gouveia</footer>
     </div>
 
-    <div class="overlay" id="overlay">
-      <div class="modal" role="dialog" aria-modal="true">
+    <div class="modalOverlay" id="modalOverlay" role="dialog" aria-modal="true">
+      <div class="modal">
         <div class="modalHeader">
-          <h3 id="modalTitle"></h3>
-          <button class="close" id="btnClose">Fechar</button>
+          <div class="modalTitle" id="modalTitle">Detalhes</div>
+          <button class="closeBtn" id="modalClose">Fechar</button>
         </div>
-        <div class="modalBody" id="modalBody"></div>
+        <div class="modalImage" id="modalImageWrap" style="display:none;">
+          <img id="modalImage" alt="" />
+        </div>
+        <div class="kv" id="modalBody"></div>
       </div>
     </div>
 
     <script>
       const SUPABASE_URL = "https://grvmisyiyxzlqfqgponm.supabase.co";
-      const SUPABASE_ANON_KEY = "https://grvmisyiyxzlqfqgponm.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdydm1pc3lpeXh6bHFmcWdwb25tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyOTgwNTgsImV4cCI6MjA4MDg3NDA1OH0.VPzEEvayTYxVZ7D56h7pWFCVDykciO7OCmGrmD1J0XE";
 
-      const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      const state = {
+        franchise: null
+      };
+
+      const headerSubtitle = document.getElementById("headerSubtitle");
+      const headerChip = document.getElementById("headerChip");
 
       const views = {
         home: document.getElementById("viewHome"),
         franchise: document.getElementById("viewFranchise"),
         characters: document.getElementById("viewCharacters"),
-        glossary: document.getElementById("viewGlossary"),
-      };
-
-      const headerTitle = document.getElementById("headerTitle");
-      const crumb = document.getElementById("crumb");
-
-      const frTitle = document.getElementById("frTitle");
-      const frSubtitle = document.getElementById("frSubtitle");
-      const frPill = document.getElementById("frPill");
-
-      const charsTitle = document.getElementById("charsTitle");
-      const charsSubtitle = document.getElementById("charsSubtitle");
-      const searchInput = document.getElementById("searchInput");
-      const charsList = document.getElementById("charsList");
-      const charsEmpty = document.getElementById("charsEmpty");
-
-      const overlay = document.getElementById("overlay");
-      considerOverlayClickClose();
-
-      const modalTitle = document.getElementById("modalTitle");
-      const modalBody = document.getElementById("modalBody");
-      document.getElementById("btnClose").addEventListener("click", closeModal);
-
-      let state = {
-        view: "home",
-        franchise: null,
-        characters: [],
+        glossary: document.getElementById("viewGlossary")
       };
 
       function showView(name) {
-        Object.values(views).forEach(v => v.style.display = "none");
-        views[name].style.display = "block";
-        state.view = name;
-        renderHeader();
+        for (const k in views) views[k].classList.remove("active");
+        views[name].classList.add("active");
+
+        if (name === "home") headerSubtitle.textContent = "Home";
+        if (name === "franchise") headerSubtitle.textContent = formatFranchise(state.franchise);
+        if (name === "characters") headerSubtitle.textContent = "Personagens";
+        if (name === "glossary") headerSubtitle.textContent = "Glossário";
       }
 
-      function renderHeader() {
-        const fr = state.franchise;
-        if (state.view === "home") {
-          headerTitle.textContent = "Henshin DB";
-          crumb.textContent = "";
-          return;
-        }
-        if (state.view === "franchise") {
-          headerTitle.textContent = "Henshin DB";
-          crumb.textContent = fr ? formatFranchise(fr) : "";
-          return;
-        }
-        if (state.view === "characters") {
-          headerTitle.textContent = "Personagens";
-          crumb.textContent = fr ? formatFranchise(fr) : "";
-          return;
-        }
-        if (state.view === "glossary") {
-          headerTitle.textContent = "Glossário";
-          crumb.textContent = fr ? formatFranchise(fr) : "";
-          return;
-        }
+      function formatFranchise(key) {
+        if (!key) return "Tema";
+        if (key === "kamen rider") return "Kamen Rider";
+        if (key === "super sentai") return "Super Sentai";
+        if (key === "metal hero") return "Metal Hero";
+        return key;
       }
 
-      function formatFranchise(fr) {
-        if (fr === "kamen rider") return "Kamen Rider";
-        if (fr === "super sentai") return "Super Sentai";
-        if (fr === "metal hero") return "Metal Hero";
-        return fr;
+      function slugifyName(name) {
+        return String(name || "")
+          .trim()
+          .toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
       }
 
-      function openFranchise(fr) {
-        state.franchise = fr;
-        frTitle.textContent = formatFranchise(fr);
-        frSubtitle.textContent = "Escolha o que você quer explorar dentro desta franquia.";
-        frPill.textContent = formatFranchise(fr);
-        showView("franchise");
-      }
-
-      function goCharacters() {
-        const fr = state.franchise;
-        charsTitle.textContent = `Personagens · ${formatFranchise(fr)}`;
-        charsSubtitle.textContent = "Lista completa em ordem alfabética. Toque em um item para ver detalhes.";
-        searchInput.value = "";
-        showView("characters");
-        loadCharacters();
-      }
-
-      function goGlossary() {
-        showView("glossary");
-      }
-
-      async function loadCharacters() {
-        charsList.innerHTML = "";
-        charsEmpty.style.display = "none";
-
-        const fr = state.franchise;
-        if (!fr) {
-          charsEmpty.textContent = "Selecione uma franquia na Home.";
-          charsEmpty.style.display = "block";
-          return;
-        }
-
-        const { data, error } = await sb
-          .from("characters")
-          .select("id,name_en,name_pt,name_jp,romaji,franchise,year,description,powers,equipment,tags,civil_name,actor_name,image_url,image_slug")
-          .eq("franchise", fr)
-          .order("name_en", { ascending: true });
-
-        if (error) {
-          charsEmpty.textContent = `Erro ao carregar: ${error.message}`;
-          charsEmpty.style.display = "block";
-          return;
-        }
-
-        state.characters = Array.isArray(data) ? data : [];
-        renderCharacters(state.characters);
-      }
-
-      function renderCharacters(items) {
-        charsList.innerHTML = "";
-
-        if (!items.length) {
-          charsEmpty.textContent = "Nenhum personagem encontrado.";
-          charsEmpty.style.display = "block";
-          return;
-        }
-
-        charsEmpty.style.display = "none";
-
-        for (const c of items) {
-          const el = document.createElement("div");
-          el.className = "item";
-          el.tabIndex = 0;
-
-          const thumb = document.createElement("div");
-          thumb.className = "thumb";
-
-          const imgUrl = getImageUrl(c);
-          if (imgUrl) {
-            const img = document.createElement("img");
-            img.loading = "lazy";
-            img.alt = c.name_en || "character";
-            img.src = imgUrl;
-            img.onerror = () => {
-              img.remove();
-              thumb.textContent = initials(c.name_en || c.name_pt || "?");
-            };
-            thumb.appendChild(img);
-          } else {
-            thumb.textContent = initials(c.name_en || c.name_pt || "?");
-          }
-
-          const main = document.createElement("div");
-          main.className = "itemMain";
-
-          const title = document.createElement("p");
-          title.className = "itemTitle";
-          title.textContent = c.name_pt || c.name_en || "Sem nome";
-
-          const meta = document.createElement("p");
-          meta.className = "itemMeta";
-          const metaParts = [];
-          if (c.name_en && c.name_pt && c.name_en !== c.name_pt) metaParts.push(c.name_en);
-          if (c.year) metaParts.push(String(c.year));
-          if (c.name_jp) metaParts.push(c.name_jp);
-          meta.textContent = metaParts.join(" · ");
-
-          main.appendChild(title);
-          main.appendChild(meta);
-
-          const tagRow = document.createElement("div");
-          tagRow.className = "tagRow";
-          const tags = safeJsonArray(c.tags);
-          for (const t of tags.slice(0, 3)) {
-            const tg = document.createElement("span");
-            tg.className = "tag";
-            tg.textContent = String(t);
-            tagRow.appendChild(tg);
-          }
-          if (tagRow.childElementCount) main.appendChild(tagRow);
-
-          el.appendChild(thumb);
-          el.appendChild(main);
-
-          el.addEventListener("click", () => openCharacterModal(c));
-          el.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") openCharacterModal(c);
-          });
-
-          charsList.appendChild(el);
-        }
-      }
-
-      function openCharacterModal(c) {
-        modalTitle.textContent = c.name_pt || c.name_en || "Detalhes";
-        modalBody.innerHTML = "";
-
-        const imgUrl = getImageUrl(c);
-        if (imgUrl) {
-          const hero = document.createElement("div");
-          hero.className = "heroImg";
-          const img = document.createElement("img");
-          img.alt = c.name_en || "character";
-          img.src = imgUrl;
-          img.loading = "eager";
-          img.onerror = () => hero.remove();
-          hero.appendChild(img);
-          modalBody.appendChild(hero);
-        }
-
-        const kv = document.createElement("div");
-        kv.className = "kv";
-
-        const blocks = [];
-
-        blocks.push(block("Nome (EN)", c.name_en));
-        blocks.push(block("Nome (JP)", c.name_jp));
-        blocks.push(block("Romaji", c.romaji));
-        blocks.push(block("Ano", c.year ? String(c.year) : null));
-        blocks.push(block("Nome civil", c.civil_name));
-        blocks.push(block("Ator", c.actor_name));
-        blocks.push(block("Descrição", c.description));
-        blocks.push(block("Poderes", c.powers));
-        blocks.push(block("Equipamentos", c.equipment));
-
-        for (const b of blocks) if (b) kv.appendChild(b);
-
-        modalBody.appendChild(kv);
-
-        overlay.classList.add("open");
-        document.body.style.overflow = "hidden";
-      }
-
-      function block(label, value) {
-        if (value === null || value === undefined) return null;
-        const v = String(value).trim();
-        if (!v) return null;
-
-        const w = document.createElement("div");
-        w.className = "kvBlock";
-
-        const l = document.createElement("p");
-        l.className = "kvLabel";
-        l.textContent = label;
-
-        const p = document.createElement("p");
-        p.className = "kvValue";
-        p.textContent = v;
-
-        w.appendChild(l);
-        w.appendChild(p);
-        return w;
-      }
-
-      function closeModal() {
-        overlay.classList.remove("open");
-        document.body.style.overflow = "";
-      }
-
-      function considerOverlayClickClose() {
-        overlay.addEventListener("click", (e) => {
-          if (e.target === overlay) closeModal();
-        });
-        window.addEventListener("keydown", (e) => {
-          if (e.key === "Escape") closeModal();
-        });
-      }
-
-      function initials(s) {
-        const t = String(s).trim();
-        if (!t) return "?";
-        const parts = t.split(/\s+/).slice(0,2);
-        return parts.map(x => x[0]?.toUpperCase() || "").join("") || "?";
-      }
-
-      function safeJsonArray(v) {
-        try {
-          if (Array.isArray(v)) return v;
-          if (typeof v === "string" && v.trim().startsWith("[")) return JSON.parse(v);
-          return [];
-        } catch {
-          return [];
-        }
-      }
-
-      function getImageUrl(c) {
-        if (c.image_url && String(c.image_url).trim()) return String(c.image_url).trim();
-
-        const slug = (c.image_slug && String(c.image_slug).trim())
-          ? String(c.image_slug).trim()
-          : slugify(c.name_en || c.name_pt || "");
-
-        if (!slug) return null;
-
+      function imageUrlForCharacter(nameEn) {
+        const slug = slugifyName(nameEn);
         return `${SUPABASE_URL}/storage/v1/object/public/henshin-images/${slug}.png`;
       }
 
-      function slugify(s) {
-        return String(s)
-          .normalize("NFKD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/(^-|-$)/g, "");
+      function safeText(v) {
+        if (v === null || v === undefined) return "";
+        const s = String(v).trim();
+        return s;
       }
 
-      function applySearchFilter() {
-        const q = searchInput.value.trim().toLowerCase();
-        if (!q) {
-          renderCharacters(state.characters);
-          return;
+      function hasValue(v) {
+        const s = safeText(v);
+        return s.length > 0 && s.toLowerCase() !== "null";
+      }
+
+      async function pingSupabase() {
+        try {
+          const { error } = await supabase.from("characters").select("id").limit(1);
+          headerChip.textContent = error ? "Conexão com erro" : "Online";
+        } catch (e) {
+          headerChip.textContent = "Offline";
         }
-        const filtered = state.characters.filter(c => {
-          const hay = [
-            c.name_en, c.name_pt, c.name_jp, c.romaji,
-            c.description, c.civil_name, c.actor_name
-          ].filter(Boolean).join(" ").toLowerCase();
-          return hay.includes(q);
-        });
-        renderCharacters(filtered);
       }
 
-      document.querySelectorAll("[data-go-franchise]").forEach(btn => {
-        btn.addEventListener("click", () => openFranchise(btn.getAttribute("data-go-franchise")));
+      const homeCategories = document.getElementById("homeCategories");
+
+      function renderHome() {
+        const cats = [
+          { key: "kamen rider", label: "Kamen Rider" },
+          { key: "super sentai", label: "Super Sentai" },
+          { key: "metal hero", label: "Metal Hero" }
+        ];
+
+        homeCategories.innerHTML = "";
+
+        for (const c of cats) {
+          const btn = document.createElement("button");
+          btn.className = "btn";
+          btn.type = "button";
+          btn.innerHTML = `<span>${c.label}</span><small>Entrar</small>`;
+          btn.addEventListener("click", () => {
+            state.franchise = c.key;
+            document.getElementById("franchiseTitle").textContent = c.label;
+            showView("franchise");
+          });
+          homeCategories.appendChild(btn);
+        }
+      }
+
+      const btnBackToHome = document.getElementById("btnBackToHome");
+      const btnGoCharacters = document.getElementById("btnGoCharacters");
+      const btnGoGlossary = document.getElementById("btnGoGlossary");
+
+      btnBackToHome.addEventListener("click", () => showView("home"));
+
+      btnGoCharacters.addEventListener("click", async () => {
+        await openCharacters();
       });
 
-      document.getElementById("btnBackHome").addEventListener("click", () => showView("home"));
-      document.getElementById("btnGoCharacters").addEventListener("click", goCharacters);
-      document.getElementById("btnGoGlossary").addEventListener("click", goGlossary);
+      btnGoGlossary.addEventListener("click", async () => {
+        await openGlossary();
+      });
 
-      document.getElementById("btnBackFranchise").addEventListener("click", () => showView("franchise"));
-      document.getElementById("btnReload").addEventListener("click", loadCharacters);
+      const btnBackToFranchiseFromCharacters = document.getElementById("btnBackToFranchiseFromCharacters");
+      const btnBackToFranchiseFromGlossary = document.getElementById("btnBackToFranchiseFromGlossary");
 
-      document.getElementById("btnBackFromGlossary").addEventListener("click", () => showView("franchise"));
+      btnBackToFranchiseFromCharacters.addEventListener("click", () => showView("franchise"));
+      btnBackToFranchiseFromGlossary.addEventListener("click", () => showView("franchise"));
 
-      searchInput.addEventListener("input", () => applySearchFilter());
+      const charactersTitle = document.getElementById("charactersTitle");
+      const charactersStatus = document.getElementById("charactersStatus");
+      const charactersList = document.getElementById("charactersList");
+      const inputCharacterSearch = document.getElementById("inputCharacterSearch");
 
-      showView("home");
+      let charactersCache = [];
+
+      async function openCharacters() {
+        charactersTitle.textContent = `${formatFranchise(state.franchise)} · Personagens`;
+        showView("characters");
+        inputCharacterSearch.value = "";
+
+        await loadCharacters();
+        renderCharactersList(charactersCache);
+      }
+
+      async function loadCharacters() {
+        charactersStatus.textContent = "Carregando...";
+        charactersList.innerHTML = "";
+
+        const { data, error } = await supabase
+          .from("characters")
+          .select("id,name_en,name_pt,name_jp,romaji,franchise,year,description,powers,equipment,civil_name,actor_name,tags,search_terms")
+          .eq("franchise", state.franchise);
+
+        if (error) {
+          charactersStatus.textContent = "Erro ao carregar personagens.";
+          charactersCache = [];
+          return;
+        }
+
+        const list = Array.isArray(data) ? data : [];
+        list.sort((a, b) => (safeText(a.name_en)).localeCompare(safeText(b.name_en), "en", { sensitivity: "base" }));
+        charactersCache = list;
+
+        charactersStatus.textContent = `${list.length} itens`;
+      }
+
+      function filterCharacters(q) {
+        const query = safeText(q).toLowerCase();
+        if (!query) return charactersCache;
+
+        return charactersCache.filter((c) => {
+          return [
+            c.name_en, c.name_pt, c.name_jp, c.romaji, c.civil_name, c.actor_name
+          ].some((v) => safeText(v).toLowerCase().includes(query));
+        });
+      }
+
+      function renderCharactersList(list) {
+        charactersList.innerHTML = "";
+
+        if (!list.length) {
+          charactersList.innerHTML = `<div class="muted" style="padding: 10px 2px;">Nenhum resultado.</div>`;
+          return;
+        }
+
+        for (const c of list) {
+          const el = document.createElement("div");
+          el.className = "item";
+
+          const imgUrl = imageUrlForCharacter(c.name_en);
+
+          el.innerHTML = `
+            <div class="itemTop">
+              <div class="thumb">
+                <img src="${imgUrl}" alt="${safeText(c.name_en)}" onerror="this.style.display='none'; this.parentElement.textContent='';" />
+              </div>
+              <div class="meta">
+                <div class="nameLine">
+                  <div class="name">${safeText(c.name_pt) || safeText(c.name_en)}</div>
+                  <div class="year">${hasValue(c.year) ? c.year : ""}</div>
+                </div>
+                <div class="muted" style="font-size:12px; line-height:1.2;">
+                  ${safeText(c.name_en)}
+                </div>
+              </div>
+            </div>
+            ${hasValue(c.description) ? `<div class="desc">${safeText(c.description)}</div>` : ``}
+          `;
+
+          el.addEventListener("click", () => openCharacterModal(c));
+          charactersList.appendChild(el);
+        }
+      }
+
+      inputCharacterSearch.addEventListener("input", () => {
+        const list = filterCharacters(inputCharacterSearch.value);
+        renderCharactersList(list);
+      });
+
+      const glossaryStatus = document.getElementById("glossaryStatus");
+      const glossaryList = document.getElementById("glossaryList");
+      const inputGlossarySearch = document.getElementById("inputGlossarySearch");
+      const selectGlossaryCategory = document.getElementById("selectGlossaryCategory");
+
+      let glossaryCache = [];
+
+      async function openGlossary() {
+        showView("glossary");
+        inputGlossarySearch.value = "";
+        selectGlossaryCategory.value = "";
+
+        await loadGlossary();
+        populateGlossaryCategories(glossaryCache);
+        renderGlossaryList(glossaryCache);
+      }
+
+      async function loadGlossary() {
+        glossaryStatus.textContent = "Carregando...";
+        glossaryList.innerHTML = "";
+
+        const { data, error } = await supabase
+          .from("glossary")
+          .select("id,jp,romaji,en,pt,explanation,category");
+
+        if (error) {
+          glossaryStatus.textContent = "Erro ao carregar glossário.";
+          glossaryCache = [];
+          return;
+        }
+
+        const list = Array.isArray(data) ? data : [];
+        list.sort((a, b) => (safeText(a.pt) || safeText(a.en) || safeText(a.jp)).localeCompare(safeText(b.pt) || safeText(b.en) || safeText(b.jp), "pt", { sensitivity: "base" }));
+        glossaryCache = list;
+
+        glossaryStatus.textContent = `${list.length} termos`;
+      }
+
+      function populateGlossaryCategories(list) {
+        const cats = Array.from(new Set(list.map(x => safeText(x.category)).filter(Boolean))).sort((a,b) => a.localeCompare(b));
+        selectGlossaryCategory.innerHTML = `<option value="">Todas</option>`;
+        for (const c of cats) {
+          const opt = document.createElement("option");
+          opt.value = c;
+          opt.textContent = c;
+          selectGlossaryCategory.appendChild(opt);
+        }
+      }
+
+      function filterGlossary(q, cat) {
+        const query = safeText(q).toLowerCase();
+        const category = safeText(cat).toLowerCase();
+
+        return glossaryCache.filter((t) => {
+          if (category && safeText(t.category).toLowerCase() !== category) return false;
+
+          if (!query) return true;
+
+          return [
+            t.jp, t.romaji, t.en, t.pt, t.explanation, t.category
+          ].some((v) => safeText(v).toLowerCase().includes(query));
+        });
+      }
+
+      function renderGlossaryList(list) {
+        glossaryList.innerHTML = "";
+
+        if (!list.length) {
+          glossaryList.innerHTML = `<div class="muted" style="padding: 10px 2px;">Nenhum resultado.</div>`;
+          return;
+        }
+
+        for (const t of list) {
+          const el = document.createElement("div");
+          el.className = "item";
+
+          const title = safeText(t.pt) || safeText(t.en) || safeText(t.jp) || "Termo";
+
+          el.innerHTML = `
+            <div class="nameLine">
+              <div class="name">${title}</div>
+              <div class="year">${safeText(t.category)}</div>
+            </div>
+            <div class="desc">
+              <div style="margin-bottom:6px;">
+                <span class="pill">${safeText(t.jp) || "-"}</span>
+                ${hasValue(t.romaji) ? `<span class="pill">${safeText(t.romaji)}</span>` : ``}
+                ${hasValue(t.en) ? `<span class="pill">${safeText(t.en)}</span>` : ``}
+              </div>
+              ${hasValue(t.explanation) ? safeText(t.explanation) : ""}
+            </div>
+          `;
+
+          el.addEventListener("click", () => openGlossaryModal(t));
+          glossaryList.appendChild(el);
+        }
+      }
+
+      inputGlossarySearch.addEventListener("input", () => {
+        const list = filterGlossary(inputGlossarySearch.value, selectGlossaryCategory.value);
+        renderGlossaryList(list);
+      });
+
+      selectGlossaryCategory.addEventListener("change", () => {
+        const list = filterGlossary(inputGlossarySearch.value, selectGlossaryCategory.value);
+        renderGlossaryList(list);
+      });
+
+      const modalOverlay = document.getElementById("modalOverlay");
+      const modalClose = document.getElementById("modalClose");
+      const modalTitle = document.getElementById("modalTitle");
+      const modalBody = document.getElementById("modalBody");
+      const modalImageWrap = document.getElementById("modalImageWrap");
+      const modalImage = document.getElementById("modalImage");
+
+      function openModal() {
+        modalOverlay.classList.add("show");
+      }
+
+      function closeModal() {
+        modalOverlay.classList.remove("show");
+      }
+
+      modalClose.addEventListener("click", closeModal);
+      modalOverlay.addEventListener("click", (e) => {
+        if (e.target === modalOverlay) closeModal();
+      });
+
+      function kvRow(label, value) {
+        const v = safeText(value);
+        if (!hasValue(v)) return "";
+        return `
+          <div class="kvRow">
+            <div class="kvLabel">${label}</div>
+            <div class="kvValue">${escapeHtml(v)}</div>
+          </div>
+        `;
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function openCharacterModal(c) {
+        const title = safeText(c.name_pt) || safeText(c.name_en) || "Detalhes";
+        modalTitle.textContent = title;
+
+        const imgUrl = imageUrlForCharacter(c.name_en);
+        modalImageWrap.style.display = "block";
+        modalImage.src = imgUrl;
+        modalImage.alt = safeText(c.name_en);
+        modalImage.onerror = () => { modalImageWrap.style.display = "none"; };
+
+        modalBody.innerHTML = [
+          kvRow("Nome (EN)", c.name_en),
+          kvRow("Nome (JP)", c.name_jp),
+          kvRow("Romaji", c.romaji),
+          kvRow("Franquia", formatFranchise(c.franchise)),
+          kvRow("Ano", c.year),
+          kvRow("Nome civil", c.civil_name),
+          kvRow("Ator", c.actor_name),
+          kvRow("Descrição", c.description),
+          kvRow("Poderes", c.powers),
+          kvRow("Equipamentos", c.equipment)
+        ].filter(Boolean).join("");
+
+        openModal();
+      }
+
+      function openGlossaryModal(t) {
+        const title = safeText(t.pt) || safeText(t.en) || safeText(t.jp) || "Termo";
+        modalTitle.textContent = title;
+
+        modalImageWrap.style.display = "none";
+        modalImage.src = "";
+        modalImage.alt = "";
+
+        modalBody.innerHTML = [
+          kvRow("JP", t.jp),
+          kvRow("Romaji", t.romaji),
+          kvRow("EN", t.en),
+          kvRow("PT", t.pt),
+          kvRow("Categoria", t.category),
+          kvRow("Explicação", t.explanation)
+        ].filter(Boolean).join("");
+
+        openModal();
+      }
+
+      function init() {
+        renderHome();
+        showView("home");
+        pingSupabase();
+      }
+
+      init();
     </script>
   </body>
 </html>
