@@ -60,52 +60,81 @@
         user-select: none;
       }
 
+      /* MAIN agora vira "stage" de views animadas */
       main {
         flex: 1;
-        overflow: auto;
-        -webkit-overflow-scrolling: touch;
-        padding: 14px 14px 90px;
+        position: relative;
+        overflow: hidden; /* <- importante pra esconder a view deslizando */
+        padding: 0;
       }
 
-      .view { display: none; }
-      .view.active { display: block; }
+      /* Container central "app-like" */
+      .mobileContainer {
+        max-width: 380px;
+        margin: 0 auto;
+        padding: 14px 14px 90px;
+        height: 100%;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* VIEWS como páginas empilhadas */
+      .view {
+        position: absolute;
+        inset: 0;
+        display: block;
+        opacity: 0;
+        transform: translateX(12px);
+        pointer-events: none;
+        transition: transform 260ms ease, opacity 260ms ease;
+        will-change: transform, opacity;
+      }
+
+      .view.active {
+        opacity: 1;
+        transform: translateX(0);
+        pointer-events: auto;
+      }
+
+      /* Estados temporários da animação */
+      .view.enterFromRight { opacity: 0; transform: translateX(24px); }
+      .view.enterFromLeft  { opacity: 0; transform: translateX(-24px); }
+      .view.leaveToLeft    { opacity: 0; transform: translateX(-24px); }
+      .view.leaveToRight   { opacity: 0; transform: translateX(24px); }
+
+      /* Respeita "reduzir movimentos" do sistema */
+      @media (prefers-reduced-motion: reduce) {
+        .view, .view.active {
+          transition: none !important;
+          transform: none !important;
+          opacity: 1 !important;
+        }
+      }
 
       .sectionTitle { margin: 6px 2px 10px; font-weight: 700; font-size: 16px; line-height: 1.2; }
       .sectionHint { margin: -4px 2px 12px; color: var(--muted); font-size: 13px; line-height: 1.25; }
 
-      .grid { display: grid; gap: 12px; }
+      .grid { display: grid; gap: 10px; justify-items: center; }
 
-      /* ✅ BOTÕES MAIS COMPACTOS (mobile-friendly) */
+      /* BOTÕES menores e centralizados */
       .btn {
         width: 100%;
+        max-width: 320px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
-
-        padding: 10px 12px;          /* era 14px 14px */
-        border-radius: 12px;         /* era 14px */
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
         border: 1px solid var(--border);
         background: var(--panel);
         color: inherit;
-
-        font-size: 14px;             /* era 16px */
+        font-size: 14px;
         cursor: pointer;
         text-align: left;
       }
       .btn:active { transform: translateY(1px); }
-      .btn small { font-size: 11px; color: var(--muted); } /* era 12px */
-
-      /* ainda menor em telas pequenas */
-      @media (max-width: 420px) {
-        .grid { gap: 10px; }
-        .btn {
-          padding: 9px 11px;
-          border-radius: 11px;
-          font-size: 13px;
-        }
-        .btn small { font-size: 10px; }
-      }
+      .btn small { font-size: 11px; color: var(--muted); }
 
       .backRow { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
 
@@ -113,9 +142,9 @@
         border: 1px solid var(--border);
         background: rgba(255, 255, 255, 0.04);
         color: inherit;
-        border-radius: 12px;
-        padding: 10px 12px;
-        font-size: 14px;
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 13px;
         cursor: pointer;
       }
       .ghostBtn:active { transform: translateY(1px); }
@@ -127,7 +156,7 @@
         border: 1px solid var(--border);
         background: rgba(0, 0, 0, 0.25);
         color: var(--text);
-        padding: 12px 12px;
+        padding: 10px 12px;
         border-radius: 12px;
         outline: none;
         font-size: 14px;
@@ -297,112 +326,124 @@
       <main>
         <!-- HOME -->
         <section class="view active" id="viewHome">
-          <div class="sectionTitle">Temas</div>
-          <div class="sectionHint">Escolha um tema para navegar.</div>
-          <div class="grid" id="homeCategories"></div>
+          <div class="mobileContainer">
+            <div class="sectionTitle">Temas</div>
+            <div class="sectionHint">Escolha um tema para navegar.</div>
+            <div class="grid" id="homeCategories"></div>
+          </div>
         </section>
 
         <!-- FRANCHISE HUB -->
         <section class="view" id="viewFranchise">
-          <div class="backRow">
-            <button class="ghostBtn" id="btnBackToHome">Voltar</button>
-          </div>
+          <div class="mobileContainer">
+            <div class="backRow">
+              <button class="ghostBtn" id="btnBackToHome">Voltar</button>
+            </div>
 
-          <div class="sectionTitle" id="franchiseTitle">Tema</div>
-          <div class="grid">
-            <button class="btn" id="btnGoCharacters">
-              <span>Personagens</span>
-              <small>Lista completa (A–Z)</small>
-            </button>
+            <div class="sectionTitle" id="franchiseTitle">Tema</div>
+            <div class="grid">
+              <button class="btn" id="btnGoCharacters">
+                <span>Personagens</span>
+                <small>Lista completa (A–Z)</small>
+              </button>
 
-            <button class="btn" id="btnGoGlossary">
-              <span>Glossário</span>
-              <small>Termos JP → PT/EN</small>
-            </button>
+              <button class="btn" id="btnGoGlossary">
+                <span>Glossário</span>
+                <small>Termos JP → PT/EN</small>
+              </button>
 
-            <button class="btn" id="btnGoPublications">
-              <span>Publicações</span>
-              <small>Filmes, séries, especiais</small>
-            </button>
+              <button class="btn" id="btnGoPublications">
+                <span>Publicações</span>
+                <small>Filmes, séries, especiais</small>
+              </button>
 
-            <button class="btn" id="btnGoCollectibles">
-              <span>Colecionáveis</span>
-              <small>DX, SHF, sofubi, etc.</small>
-            </button>
+              <button class="btn" id="btnGoCollectibles">
+                <span>Colecionáveis</span>
+                <small>DX, SHF, sofubi, etc.</small>
+              </button>
+            </div>
           </div>
         </section>
 
         <!-- CHARACTERS -->
         <section class="view" id="viewCharacters">
-          <div class="backRow">
-            <button class="ghostBtn" id="btnBackToFranchiseFromCharacters">Voltar</button>
+          <div class="mobileContainer">
+            <div class="backRow">
+              <button class="ghostBtn" id="btnBackToFranchiseFromCharacters">Voltar</button>
+            </div>
+
+            <div class="sectionTitle" id="charactersTitle">Personagens</div>
+
+            <div class="searchBox">
+              <input type="search" id="inputCharacterSearch" placeholder="Buscar por nome (EN/PT/JP/romaji)..." />
+            </div>
+
+            <div class="muted" id="charactersStatus"></div>
+            <div class="list" id="charactersList" style="margin-top: 12px;"></div>
           </div>
-
-          <div class="sectionTitle" id="charactersTitle">Personagens</div>
-
-          <div class="searchBox">
-            <input type="search" id="inputCharacterSearch" placeholder="Buscar por nome (EN/PT/JP/romaji)..." />
-          </div>
-
-          <div class="muted" id="charactersStatus"></div>
-          <div class="list" id="charactersList" style="margin-top: 12px;"></div>
         </section>
 
         <!-- GLOSSARY -->
         <section class="view" id="viewGlossary">
-          <div class="backRow">
-            <button class="ghostBtn" id="btnBackToFranchiseFromGlossary">Voltar</button>
+          <div class="mobileContainer">
+            <div class="backRow">
+              <button class="ghostBtn" id="btnBackToFranchiseFromGlossary">Voltar</button>
+            </div>
+
+            <div class="sectionTitle">Glossário</div>
+
+            <div class="searchBox">
+              <input type="search" id="inputGlossarySearch" placeholder="Buscar por JP/romaji/EN/PT..." />
+              <select id="selectGlossaryCategory">
+                <option value="">Todas</option>
+              </select>
+            </div>
+
+            <div class="muted" id="glossaryStatus"></div>
+            <div class="list" id="glossaryList" style="margin-top: 12px;"></div>
           </div>
-
-          <div class="sectionTitle">Glossário</div>
-
-          <div class="searchBox">
-            <input type="search" id="inputGlossarySearch" placeholder="Buscar por JP/romaji/EN/PT..." />
-            <select id="selectGlossaryCategory">
-              <option value="">Todas</option>
-            </select>
-          </div>
-
-          <div class="muted" id="glossaryStatus"></div>
-          <div class="list" id="glossaryList" style="margin-top: 12px;"></div>
         </section>
 
         <!-- PUBLICATIONS -->
         <section class="view" id="viewPublications">
-          <div class="backRow">
-            <button class="ghostBtn" id="btnBackToFranchiseFromPublications">Voltar</button>
+          <div class="mobileContainer">
+            <div class="backRow">
+              <button class="ghostBtn" id="btnBackToFranchiseFromPublications">Voltar</button>
+            </div>
+
+            <div class="sectionTitle" id="publicationsTitle">Publicações</div>
+
+            <div class="searchBox">
+              <input type="search" id="inputPublicationsSearch" placeholder="Buscar por título, tipo, ano..." />
+              <select id="selectPublicationsType">
+                <option value="">Todos</option>
+              </select>
+            </div>
+
+            <div class="muted" id="publicationsStatus"></div>
+            <div class="list" id="publicationsList" style="margin-top: 12px;"></div>
           </div>
-
-          <div class="sectionTitle" id="publicationsTitle">Publicações</div>
-
-          <div class="searchBox">
-            <input type="search" id="inputPublicationsSearch" placeholder="Buscar por título, tipo, ano..." />
-            <select id="selectPublicationsType">
-              <option value="">Todos</option>
-            </select>
-          </div>
-
-          <div class="muted" id="publicationsStatus"></div>
-          <div class="list" id="publicationsList" style="margin-top: 12px;"></div>
         </section>
 
         <!-- COLLECTIBLES -->
         <section class="view" id="viewCollectibles">
-          <div class="backRow">
-            <button class="ghostBtn" id="btnBackToFranchiseFromCollectibles">Voltar</button>
+          <div class="mobileContainer">
+            <div class="backRow">
+              <button class="ghostBtn" id="btnBackToFranchiseFromCollectibles">Voltar</button>
+            </div>
+
+            <div class="sectionTitle" id="collectiblesTitle">Colecionáveis</div>
+
+            <div class="searchBox">
+              <input type="search" id="inputCollectiblesSearch" placeholder="Buscar por nome, marca, categoria..." />
+              <select id="selectCollectiblesCategory">
+                <option value="">Todas</option>
+              </select>
+            </div>
+
+            <div class="muted" id="collectiblesStatus"></div>
+            <div class="list" id="collectiblesList" style="margin-top: 12px;"></div>
           </div>
-
-          <div class="sectionTitle" id="collectiblesTitle">Colecionáveis</div>
-
-          <div class="searchBox">
-            <input type="search" id="inputCollectiblesSearch" placeholder="Buscar por nome, marca, categoria..." />
-            <select id="selectCollectiblesCategory">
-              <option value="">Todas</option>
-            </select>
-          </div>
-
-          <div class="muted" id="collectiblesStatus"></div>
-          <div class="list" id="collectiblesList" style="margin-top: 12px;"></div>
         </section>
       </main>
 
@@ -430,11 +471,9 @@
     <script>
       const SUPABASE_URL = "https://grvmisyiyxzlqfqgponm.supabase.co";
       const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdydm1pc3lpeXh6bHFmcWdwb25tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyOTgwNTgsImV4cCI6MjA4MDg3NDA1OH0.VPzEEvayTYxVZ7D56h7pWFCVDykciO7OCmGrmD1J0XE";
-
       const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       const state = { franchise: null };
-
       const headerSubtitle = document.getElementById("headerSubtitle");
       const headerChip = document.getElementById("headerChip");
 
@@ -447,16 +486,50 @@
         collectibles: document.getElementById("viewCollectibles")
       };
 
-      function showView(name) {
-        for (const k in views) views[k].classList.remove("active");
-        views[name].classList.add("active");
+      let currentView = "home";
 
+      function setHeaderForView(name) {
         if (name === "home") headerSubtitle.textContent = "Home";
         if (name === "franchise") headerSubtitle.textContent = formatFranchise(state.franchise);
         if (name === "characters") headerSubtitle.textContent = "Personagens";
         if (name === "glossary") headerSubtitle.textContent = "Glossário";
         if (name === "publications") headerSubtitle.textContent = "Publicações";
         if (name === "collectibles") headerSubtitle.textContent = "Colecionáveis";
+      }
+
+      function showView(name, dir = "forward") {
+        if (name === currentView) return;
+
+        const from = views[currentView];
+        const to = views[name];
+
+        // prepara "to" fora da tela no sentido correto
+        to.classList.remove("enterFromRight","enterFromLeft","leaveToLeft","leaveToRight","active");
+        from.classList.remove("enterFromRight","enterFromLeft","leaveToLeft","leaveToRight");
+
+        if (dir === "forward") to.classList.add("enterFromRight");
+        else to.classList.add("enterFromLeft");
+
+        // força reflow pra transição pegar
+        void to.offsetWidth;
+
+        // anima saída
+        if (dir === "forward") from.classList.add("leaveToLeft");
+        else from.classList.add("leaveToRight");
+
+        // anima entrada
+        to.classList.add("active");
+        to.classList.remove("enterFromRight","enterFromLeft");
+
+        // limpa a view antiga quando terminar
+        const done = () => {
+          from.classList.remove("active","leaveToLeft","leaveToRight");
+          from.removeEventListener("transitionend", done);
+        };
+        from.addEventListener("transitionend", done);
+
+        currentView = name;
+        setHeaderForView(name);
       }
 
       function formatFranchise(key) {
@@ -536,29 +609,28 @@
           const btn = document.createElement("button");
           btn.className = "btn";
           btn.type = "button";
-          // sem botão “ABRIR” — o nome é o botão
           btn.innerHTML = `<span>${c.label}</span><small></small>`;
           btn.addEventListener("click", () => {
             state.franchise = c.key;
             document.getElementById("franchiseTitle").textContent = c.label;
-            showView("franchise");
+            showView("franchise", "forward");
           });
           homeCategories.appendChild(btn);
         }
       }
 
       // NAV HUB
-      document.getElementById("btnBackToHome").addEventListener("click", () => showView("home"));
+      document.getElementById("btnBackToHome").addEventListener("click", () => showView("home", "back"));
 
       document.getElementById("btnGoCharacters").addEventListener("click", async () => openCharacters());
       document.getElementById("btnGoGlossary").addEventListener("click", async () => openGlossary());
       document.getElementById("btnGoPublications").addEventListener("click", async () => openPublications());
       document.getElementById("btnGoCollectibles").addEventListener("click", async () => openCollectibles());
 
-      document.getElementById("btnBackToFranchiseFromCharacters").addEventListener("click", () => showView("franchise"));
-      document.getElementById("btnBackToFranchiseFromGlossary").addEventListener("click", () => showView("franchise"));
-      document.getElementById("btnBackToFranchiseFromPublications").addEventListener("click", () => showView("franchise"));
-      document.getElementById("btnBackToFranchiseFromCollectibles").addEventListener("click", () => showView("franchise"));
+      document.getElementById("btnBackToFranchiseFromCharacters").addEventListener("click", () => showView("franchise", "back"));
+      document.getElementById("btnBackToFranchiseFromGlossary").addEventListener("click", () => showView("franchise", "back"));
+      document.getElementById("btnBackToFranchiseFromPublications").addEventListener("click", () => showView("franchise", "back"));
+      document.getElementById("btnBackToFranchiseFromCollectibles").addEventListener("click", () => showView("franchise", "back"));
 
       // MODAL
       const modalOverlay = document.getElementById("modalOverlay");
@@ -609,7 +681,7 @@
 
       async function openCharacters() {
         charactersTitle.textContent = `${formatFranchise(state.franchise)} · Personagens`;
-        showView("characters");
+        showView("characters", "forward");
         inputCharacterSearch.value = "";
 
         await loadCharacters();
@@ -711,7 +783,7 @@
       let glossaryCache = [];
 
       async function openGlossary() {
-        showView("glossary");
+        showView("glossary", "forward");
         inputGlossarySearch.value = "";
         selectGlossaryCategory.value = "";
 
@@ -736,7 +808,8 @@
 
         const list = Array.isArray(data) ? data : [];
         list.sort((a, b) =>
-          (safeText(a.pt) || safeText(a.en) || safeText(a.jp)).localeCompare(safeText(b.pt) || safeText(b.en) || safeText(b.jp), "pt", { sensitivity: "base" })
+          (safeText(a.pt) || safeText(a.en) || safeText(a.jp))
+            .localeCompare(safeText(b.pt) || safeText(b.en) || safeText(b.jp), "pt", { sensitivity: "base" })
         );
         glossaryCache = list;
         glossaryStatus.textContent = `${list.length} termos`;
@@ -824,7 +897,7 @@
 
       async function openPublications() {
         publicationsTitle.textContent = `${formatFranchise(state.franchise)} · Publicações`;
-        showView("publications");
+        showView("publications", "forward");
         inputPublicationsSearch.value = "";
         selectPublicationsType.value = "";
         await loadPublications();
@@ -943,7 +1016,7 @@
 
       async function openCollectibles() {
         collectiblesTitle.textContent = `${formatFranchise(state.franchise)} · Colecionáveis`;
-        showView("collectibles");
+        showView("collectibles", "forward");
         inputCollectiblesSearch.value = "";
         selectCollectiblesCategory.value = "";
         await loadCollectibles();
@@ -1042,7 +1115,7 @@
 
       function init() {
         renderHome();
-        showView("home");
+        setHeaderForView("home");
         pingSupabase();
       }
 

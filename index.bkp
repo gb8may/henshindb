@@ -75,23 +75,37 @@
 
       .grid { display: grid; gap: 12px; }
 
+      /* ✅ BOTÕES MAIS COMPACTOS (mobile-friendly) */
       .btn {
         width: 100%;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
-        padding: 14px 14px;
-        border-radius: 14px;
+        gap: 8px;
+
+        padding: 10px 12px;          /* era 14px 14px */
+        border-radius: 12px;         /* era 14px */
         border: 1px solid var(--border);
         background: var(--panel);
         color: inherit;
-        font-size: 16px;
+
+        font-size: 14px;             /* era 16px */
         cursor: pointer;
         text-align: left;
       }
       .btn:active { transform: translateY(1px); }
-      .btn small { font-size: 12px; color: var(--muted); }
+      .btn small { font-size: 11px; color: var(--muted); } /* era 12px */
+
+      /* ainda menor em telas pequenas */
+      @media (max-width: 420px) {
+        .grid { gap: 10px; }
+        .btn {
+          padding: 9px 11px;
+          border-radius: 11px;
+          font-size: 13px;
+        }
+        .btn small { font-size: 10px; }
+      }
 
       .backRow { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
 
@@ -667,14 +681,13 @@
           el.addEventListener("click", () => {
             modalTitle.textContent = safeText(c.name_pt) || safeText(c.name_en) || "Detalhes";
             setModalImage(imgUrl, c.name_en);
-            setModalLink(""); // personagem não precisa link agora
+            setModalLink("");
             modalBody.innerHTML = [
               kvRow("Nome (EN)", c.name_en),
               kvRow("Nome (JP)", c.name_jp),
               kvRow("Romaji", c.romaji),
               kvRow("Franquia", formatFranchise(c.franchise)),
               kvRow("Ano", c.year),
-              // ✅ se for null, não aparece (seu pedido)
               kvRow("Nome civil", c.civil_name),
               kvRow("Ator", c.actor_name),
               kvRow("Descrição", c.description),
