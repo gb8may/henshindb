@@ -487,6 +487,7 @@
         if (key === "kamen rider") return "Kamen Rider";
         if (key === "super sentai") return "Super Sentai";
         if (key === "metal hero") return "Metal Hero";
+        if (key === "ultraman") return "Ultraman";
         return key;
       }
 
@@ -543,7 +544,6 @@
       function withCacheBuster(url) {
         const u = safeText(url);
         if (!hasValue(u)) return "";
-        // evita ficar preso na imagem antiga quando você sobrescreve no bucket
         const sep = u.includes("?") ? "&" : "?";
         return `${u}${sep}v=${Date.now()}`;
       }
@@ -564,7 +564,8 @@
         const cats = [
           { key: "kamen rider", label: "Kamen Rider" },
           { key: "super sentai", label: "Super Sentai" },
-          { key: "metal hero", label: "Metal Hero" }
+          { key: "metal hero", label: "Metal Hero" },
+          { key: "ultraman", label: "Ultraman" }
         ];
 
         homeCategories.innerHTML = "";
@@ -857,7 +858,7 @@
       inputGlossarySearch.addEventListener("input", () => renderGlossaryList(filterGlossary(inputGlossarySearch.value, selectGlossaryCategory.value)));
       selectGlossaryCategory.addEventListener("change", () => renderGlossaryList(filterGlossary(inputGlossarySearch.value, selectGlossaryCategory.value)));
 
-      // ✅ PUBLICATIONS (CORRIGIDO PARA SEU SCHEMA)
+      // ✅ PUBLICATIONS (AJUSTADO: NÃO USA colunas que podem não existir)
       const publicationsTitle = document.getElementById("publicationsTitle");
       const publicationsStatus = document.getElementById("publicationsStatus");
       const publicationsList = document.getElementById("publicationsList");
@@ -885,7 +886,7 @@
 
         const { data, error } = await supabase
           .from("publications")
-          .select("id,title_en,title_pt,title_jp,pub_type,publisher,issue,year,month,isbn,language,franchise,era,cover_url,notes,url,created_at")
+          .select("id,title_en,title_pt,title_jp,pub_type,publisher,issue,year,month,isbn,language,franchise,cover_url,notes,url")
           .eq("franchise", state.franchise);
 
         if (error) {
@@ -928,7 +929,7 @@
             p.title_pt, p.title_en, p.title_jp,
             p.pub_type, p.publisher, p.issue,
             p.year, p.month, p.isbn, p.language,
-            p.notes, p.era
+            p.notes
           ].some((v) => safeText(v).toLowerCase().includes(query));
         });
       }
@@ -983,7 +984,6 @@
               specRow("Mês", p.month),
               specRow("Idioma", p.language),
               specRow("ISBN", p.isbn),
-              specRow("Era", p.era),
               specRow("Franquia", formatFranchise(p.franchise)),
               specRow("Notas", p.notes),
               specRow("URL", p.url)
@@ -1004,7 +1004,7 @@
         renderPublicationsList(filterPublications(inputPublicationsSearch.value, selectPublicationsType.value))
       );
 
-      // ✅ COLLECTIBLES (CORRIGIDO PARA SEU SCHEMA)
+      // ✅ COLLECTIBLES (AJUSTADO: inclui URL e usa cache-buster na imagem)
       const collectiblesTitle = document.getElementById("collectiblesTitle");
       const collectiblesStatus = document.getElementById("collectiblesStatus");
       const collectiblesList = document.getElementById("collectiblesList");
@@ -1022,7 +1022,6 @@
         inputCollectiblesSearch.value = "";
         selectCollectiblesCategory.value = "";
         await loadCollectibles();
-        // filtro principal por item_type (belt/figure/mecha/weapon etc)
         populateSelect(selectCollectiblesCategory, collectiblesCache.map(x => safeText(x.item_type)).filter(Boolean), "Todos");
         renderCollectiblesList(filterCollectibles("", ""));
       }
@@ -1033,7 +1032,7 @@
 
         const { data, error } = await supabase
           .from("collectibles")
-          .select("id,name_en,name_pt,name_jp,franchise,era,year,line,item_type,manufacturer,series_code,sku_code,image_url,jp_search,notes,rarity,status,created_at")
+          .select("id,name_en,name_pt,name_jp,franchise,era,year,line,item_type,manufacturer,series_code,sku_code,image_url,jp_search,notes,rarity,status,url")
           .eq("franchise", state.franchise);
 
         if (error) {
@@ -1088,7 +1087,7 @@
           el.innerHTML = `
             <div class="itemTop">
               <div class="thumb">
-                ${hasValue(img) ? `<img src="${img}" alt="${escapeHtml(name)}" onerror="this.style.display='none'; this.parentElement.textContent='';" />` : ``}
+                ${hasValue(img) ? `<img src="${withCacheBuster(img)}" alt="${escapeHtml(name)}" onerror="this.style.display='none'; this.parentElement.textContent='';" />` : ``}
               </div>
               <div class="meta">
                 <div class="nameLine">
@@ -1106,7 +1105,7 @@
           el.addEventListener("click", () => {
             modalTitle.textContent = name;
             setModalImage(img, name);
-            setModalLink(""); // collectibles não tem URL no seu schema atual; se quiser, eu adiciono campo depois
+            setModalLink(it.url);
 
             const rows = [
               specRow("Nome (PT)", it.name_pt),
@@ -1123,7 +1122,8 @@
               specRow("Raridade", it.rarity),
               specRow("JP search", it.jp_search),
               specRow("Notas", it.notes),
-              specRow("Franquia", formatFranchise(it.franchise))
+              specRow("Franquia", formatFranchise(it.franchise)),
+              specRow("URL", it.url)
             ].filter(Boolean).join("");
 
             modalBody.innerHTML = renderSpecCard(rows);
@@ -1140,6 +1140,11 @@
       selectCollectiblesCategory.addEventListener("change", () =>
         renderCollectiblesList(filterCollectibles(inputCollectiblesSearch.value, selectCollectiblesCategory.value))
       );
+
+      // Modal ESC
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeModal();
+      });
 
       function init() {
         renderHome();
